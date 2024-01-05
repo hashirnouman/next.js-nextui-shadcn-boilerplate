@@ -13,7 +13,11 @@ import {
 import { useTheme } from 'next-themes';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useRouter } from 'next/router';
-import { Value } from '@radix-ui/react-select';
+import { useDispatch } from 'react-redux';
+import { dirRTL, dirLTR } from '../slices/directionSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import Navbar from '@/components/header/NavBar';
 const inter = Inter({ subsets: ['latin'] });
 
 const languages = [
@@ -26,6 +30,9 @@ const themes = [
   { code: 'dark', translateKey: 'dark' },
 ]
 export default function Home() {
+  const dispatch = useDispatch();
+  const direction = useSelector((state: RootState) => state.counter.direction);
+
   const { locale } = useRouter();
   const route = useRouter();
 
@@ -33,6 +40,12 @@ export default function Home() {
   const [date, setDate] = React.useState<Date>();
   const { t, i18n, } = useTranslation('common')
   const changeLanguage = (language: string) => {
+    if(language == 'ar'){
+      dispatch(dirRTL());
+    }
+    else{
+      dispatch(dirLTR());
+    }
     i18n.changeLanguage(language)
   }
   const changeTheme = (theme: string) => {
@@ -40,7 +53,9 @@ export default function Home() {
   };
 
   return (
-    <div  className='flex h-screen w-full items-center justify-center direction-rtl'>
+    <>
+    <Navbar />
+    <div dir={direction}  className='flex h-screen w-full items-center justify-center direction-rtl'>
       <div className=' grid place-items-center'>
         <div>
           <Button className='py-2 px-8 m-2' onClick={() => changeTheme("default")}>default</Button>
@@ -134,5 +149,6 @@ export default function Home() {
       </div>
       <div>{t('welcome')}</div>
     </div>
+    </>
   );
 }
