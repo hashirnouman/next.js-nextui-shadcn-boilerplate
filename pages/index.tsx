@@ -35,12 +35,12 @@ export default function Home() {
   const changeLanguage = (language: string) => {
     i18n.changeLanguage(language)
   }
-  const changeTheme = (them: string) => {
-    document.querySelector("html")?.setAttribute("data-theme", them);
+  const changeTheme = (theme: string) => {
+    document.querySelector("html")?.setAttribute("data-theme", theme);
   };
 
   return (
-    <div className='flex h-screen w-full items-center justify-center'>
+    <div  className='flex h-screen w-full items-center justify-center direction-rtl'>
       <div className=' grid place-items-center'>
         <div>
           <Button className='py-2 px-8 m-2' onClick={() => changeTheme("default")}>default</Button>
@@ -80,7 +80,7 @@ export default function Home() {
             }}
           >
             <SelectTrigger>
-              {themes.find((op) => op.code === document.querySelector("html")?.getAttribute("data-theme"))?.translateKey}
+              {theme}
             </SelectTrigger>
             <SelectContent>
               {themes.map((op) => (
