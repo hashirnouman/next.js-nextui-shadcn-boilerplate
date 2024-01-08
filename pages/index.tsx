@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Inter } from 'next/font/google';
 import React from 'react';
+import { parseCookies } from 'nookies';
+
 import {
   Select,
   SelectContent,
@@ -31,6 +33,8 @@ const themes = [
   { code: 'dark', translateKey: 'dark' },
 ]
 export default function Home() {
+  const cookies = parseCookies();
+  const logedinuser = cookies.username;
   const router = useRouter();
   const { locale } = router;
   const t = locale === 'en' ? en : ar;
@@ -150,6 +154,9 @@ export default function Home() {
       <h1 className="text-5xl text-white text-shadow font-bold px-8 text-center">
             {t.welcome}
           </h1>
+          <br />
+          <div>
+          </div>
       </div>
     </div>
     </>

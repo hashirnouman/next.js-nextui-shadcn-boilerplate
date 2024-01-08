@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Jwt from 'jsonwebtoken';
 import axios from 'axios';
@@ -12,6 +11,7 @@ import { RootState } from '@/store';
 import { ChangeEvent } from 'react';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
+import { parseCookies } from 'nookies';
 interface MenuItem {
   id: number;
   name: string;
@@ -40,11 +40,12 @@ const Navbar: React.FC = () => {
 
 
   const { resolvedTheme, theme, setTheme } = useTheme();
-  const { data: session } = useSession();
   const route = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [logo, setLogo] = useState('');
+
+  const [email, setEmail] = useState('');
   const dispatch = useDispatch();
   const direction = useSelector((state: RootState) => state.counter.direction);
 
@@ -74,14 +75,15 @@ const Navbar: React.FC = () => {
   };
 
   const nestedMenuItems = buildMenuTree(menuItems);
-
+  const cookies = parseCookies();
   useEffect(() => {
-    const userEmail = session?.user?.userEmail;
+    const userEmail = cookies.username;
     if (userEmail) {
+      setEmail(userEmail);
       getData(userEmail);
       getLogo(userEmail);
     }
-  }, [session]);
+  }, [cookies]);
 
   function buildMenuTree(menuItems: MenuItem[], parentId = 0): MenuItem[] {
     const menuTree: MenuItem[] = [];
@@ -100,41 +102,40 @@ const Navbar: React.FC = () => {
   }
   
 
- const handleLogin = async () => {
-    if (window.confirm('Are you sure to Loing from this user !') === true) {
-      try {
-          debugger;
-          const fetchResponse = await fetch(`https://localhost:7160/api/Auth/AuthenticateById?id=${session?.user.saId}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-          });
+//  const handleLogin = async () => {
+//     if (window.confirm('Are you sure to Loing from this user !') === true) {
+//       try {
+//           debugger;
+//           const fetchResponse = await fetch(`https://localhost:7160/api/Auth/AuthenticateById?id=${session?.user.saId}`, {
+//               method: 'POST',
+//               headers: { 'Content-Type': 'application/json' },
+//           });
 
-          if (!fetchResponse.ok) {
-              throw new Error(`Request failed with status: ${fetchResponse.status}`);
-          }
+//           if (!fetchResponse.ok) {
+//               throw new Error(`Request failed with status: ${fetchResponse.status}`);
+//           }
 
-          const resp = await fetchResponse.json();
-          const json = Jwt.decode(resp.message) as { [key: string]: string };
-          console.log(json);
-          signIn("credentials", {
-              email: json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'],
-              name: json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
-              role: json['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
-              permission: json['permission'],
-              saId : json['saId'],
-              redirect: false,
-          }).then(() => {
-              route.push('/');
-          });
-      } catch (error) {
-          console.error('Fetch error:');
-      }
-    }}
+//           const resp = await fetchResponse.json();
+//           const json = Jwt.decode(resp.message) as { [key: string]: string };
+//           console.log(json);
+//           signIn("credentials", {
+//               email: json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'],
+//               name: json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
+//               role: json['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+//               permission: json['permission'],
+//               saId : json['saId'],
+//               redirect: false,
+//           }).then(() => {
+//               route.push('/');
+//           });
+//       } catch (error) {
+//           console.error('Fetch error:');
+//       }
+//     }}
 
   return (
     <>
-      {session && (
-        <nav className="bg-gray-800 p-4">
+      <nav className="bg-gray-800 p-4">
           <div dir={direction} className="container mx-auto flex items-center justify-between">
             <div className="flex items-center">
               <img
@@ -142,7 +143,7 @@ const Navbar: React.FC = () => {
                 alt="Logo"
                 className="w-12 h-12 md:w-16 md:h-16 mr-4 rounded-full"
               />
-              <h1 className="text-white text-lg md:text-xl font-semibold">{'Restaurant: '+session.user.name}</h1>
+              <h1 className="text-white text-lg md:text-xl font-semibold">{email}</h1>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -178,14 +179,13 @@ const Navbar: React.FC = () => {
                   alt="Profile"
                   className="w-8 h-8 rounded-full"
                 />
-                <button onClick={() => signOut()} className="text-white">
+                <button onClick={() => (location.href = "/logout")} className="text-white">
                   Sign Out
                 </button>
               </div>
             </div>
           </div>
         </nav>
-      )}
     </>
   );
 };
