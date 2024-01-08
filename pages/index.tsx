@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Inter } from 'next/font/google';
 import React from 'react';
-import { useTranslation, } from 'next-i18next'
 import {
   Select,
   SelectContent,
@@ -18,6 +17,8 @@ import { dirRTL, dirLTR } from '../slices/directionSlice';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import Navbar from '@/components/header/NavBar';
+import en from '@/locales/en';
+import ar from '@/locales/ar';
 const inter = Inter({ subsets: ['latin'] });
 
 const languages = [
@@ -30,15 +31,14 @@ const themes = [
   { code: 'dark', translateKey: 'dark' },
 ]
 export default function Home() {
+  const router = useRouter();
+  const { locale } = router;
+  const t = locale === 'en' ? en : ar;
+
   const dispatch = useDispatch();
   const direction = useSelector((state: RootState) => state.counter.direction);
-
-  const { locale } = useRouter();
-  const route = useRouter();
-
   const { resolvedTheme, theme, setTheme } = useTheme();
   const [date, setDate] = React.useState<Date>();
-  const { t, i18n, } = useTranslation('common')
   const changeLanguage = (language: string) => {
     if(language == 'ar'){
       dispatch(dirRTL());
@@ -46,7 +46,6 @@ export default function Home() {
     else{
       dispatch(dirLTR());
     }
-    i18n.changeLanguage(language)
   }
   const changeTheme = (theme: string) => {
     document.querySelector("html")?.setAttribute("data-theme", theme);
@@ -66,7 +65,7 @@ export default function Home() {
           <Button className='py-2 px-8 m-2' onClick={() => changeLanguage("ar")}>Urdu</Button>
         </div>
         <div className='flex flex-row gap-3'>
-          <Select
+          {/* <Select
             value={locale}
             onValueChange={(newValue) => {
               route.push('', undefined, {
@@ -86,7 +85,7 @@ export default function Home() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select> */}
 
           <Select
           value={theme}
@@ -117,7 +116,7 @@ export default function Home() {
         </SelectTrigger>
         <SelectContent>
           {languages.map((language, index) => (
-            <SelectItem onSelect={() => changeLanguage(language.code)} key={index} value={language.code} defaultChecked={language.code == 'en'}  >{t(language.translateKey)}</SelectItem>
+            <SelectItem onSelect={() => changeLanguage(language.code)} key={index} value={language.code} defaultChecked={language.code == 'en'}  >{language.translateKey}</SelectItem>
           ))}
 
 
@@ -147,7 +146,11 @@ export default function Home() {
           </button>
         ))} */}
       </div>
-      <div>{t('welcome')}</div>
+      <div>
+      <h1 className="text-5xl text-white text-shadow font-bold px-8 text-center">
+            {t.welcome}
+          </h1>
+      </div>
     </div>
     </>
   );

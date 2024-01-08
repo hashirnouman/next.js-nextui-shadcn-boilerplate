@@ -9,6 +9,9 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { dirRTL, dirLTR } from '@/slices/directionSlice';
 import { RootState } from '@/store';
+import { ChangeEvent } from 'react';
+import en from '@/locales/en';
+import ar from '@/locales/ar';
 interface MenuItem {
   id: number;
   name: string;
@@ -20,6 +23,22 @@ interface MenuItem {
 }
 
 const Navbar: React.FC = () => {
+  const router = useRouter();
+  const { locale } = router;
+  const t = locale === 'en' ? en : ar;
+
+  const changeLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
+    const selectedLocale = e.target.value;
+    router.push(router.pathname, router.asPath, { locale: selectedLocale });
+    if(selectedLocale == 'ar'){
+      dispatch(dirRTL());
+    }
+    else{
+      dispatch(dirLTR());
+    }
+  };
+
+
   const { resolvedTheme, theme, setTheme } = useTheme();
   const { data: session } = useSession();
   const route = useRouter();
@@ -128,19 +147,9 @@ const Navbar: React.FC = () => {
 
             <div className="flex items-center space-x-4">
               <select
-                value={route.locale}
-                onChange={(e) => {
-                  route.push('', undefined, {
-                    locale: e.target.value,
-                  });
-                  if(e.target.value == 'ar'){
-                    dispatch(dirRTL());
-                  }
-                  else{
-                    dispatch(dirLTR());
-                  }
-                }}
-                className="text-white bg-gray-600 rounded-md p-1"
+                onChange={changeLanguage}
+                value={locale}
+                className="text-white text-shadow-sm text-lg bg-transparent tracking-wide"
               >
                 {LangDropDown.map((op) => (
                   <option value={op.value} key={op.id}>
@@ -148,7 +157,6 @@ const Navbar: React.FC = () => {
                   </option>
                 ))}
               </select>
-
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="text-white focus:outline-none"
