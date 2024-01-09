@@ -4,14 +4,11 @@ import { useRouter } from 'next/router';
 import Jwt from 'jsonwebtoken';
 import axios from 'axios';
 import { LangDropDown } from '@/constants/constants';
-import { useDispatch, useSelector } from 'react-redux';
-
-import { dirRTL, dirLTR } from '@/slices/directionSlice';
-import { RootState } from '@/store';
 import { ChangeEvent } from 'react';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
 import { parseCookies } from 'nookies';
+import useDirStore from '@/store/store';
 interface MenuItem {
   id: number;
   name: string;
@@ -27,14 +24,16 @@ const Navbar: React.FC = () => {
   const { locale } = router;
   const t = locale === 'en' ? en : ar;
 
+  const { direction, setDirection } = useDirStore();
+
   const changeLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedLocale = e.target.value;
     router.push(router.pathname, router.asPath, { locale: selectedLocale });
     if(selectedLocale == 'ar'){
-      dispatch(dirRTL());
+      setDirection('rtl');
     }
     else{
-      dispatch(dirLTR());
+      setDirection('ltr');
     }
   };
 
@@ -46,9 +45,6 @@ const Navbar: React.FC = () => {
   const [logo, setLogo] = useState('');
 
   const [email, setEmail] = useState('');
-  const dispatch = useDispatch();
-  const direction = useSelector((state: RootState) => state.counter.direction);
-
   const getData = (userEmail: string) => {
     axios
       .get(`https://localhost:7160/api/Permission/GetMenuItems?userEmail=${userEmail}`)
@@ -83,7 +79,7 @@ const Navbar: React.FC = () => {
       getData(userEmail);
       getLogo(userEmail);
     }
-  }, [cookies]);
+  }, []);
 
   function buildMenuTree(menuItems: MenuItem[], parentId = 0): MenuItem[] {
     const menuTree: MenuItem[] = [];
@@ -145,7 +141,6 @@ const Navbar: React.FC = () => {
               />
               <h1 className="text-white text-lg md:text-xl font-semibold">{email}</h1>
             </div>
-
             <div className="flex items-center space-x-4">
               <select
                 onChange={changeLanguage}

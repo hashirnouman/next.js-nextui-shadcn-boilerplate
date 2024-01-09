@@ -14,13 +14,10 @@ import {
 import { useTheme } from 'next-themes';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useRouter } from 'next/router';
-import { useDispatch } from 'react-redux';
-import { dirRTL, dirLTR } from '../slices/directionSlice';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import Navbar from '@/components/header/NavBar';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
+import useDirStore from '@/store/store';
 const inter = Inter({ subsets: ['latin'] });
 
 const languages = [
@@ -39,21 +36,14 @@ export default function Home() {
   const { locale } = router;
   const t = locale === 'en' ? en : ar;
 
-  const dispatch = useDispatch();
-  const direction = useSelector((state: RootState) => state.counter.direction);
   const { resolvedTheme, theme, setTheme } = useTheme();
   const [date, setDate] = React.useState<Date>();
-  const changeLanguage = (language: string) => {
-    if(language == 'ar'){
-      dispatch(dirRTL());
-    }
-    else{
-      dispatch(dirLTR());
-    }
-  }
   const changeTheme = (theme: string) => {
     document.querySelector("html")?.setAttribute("data-theme", theme);
   };
+  const {
+    direction
+  } = useDirStore();
 
   return (
     <>
@@ -63,10 +53,6 @@ export default function Home() {
         <div>
           <Button className='py-2 px-8 m-2' onClick={() => changeTheme("default")}>default</Button>
           <Button className='py-2 px-8 m-2' onClick={() => changeTheme("dark")}>dark</Button>
-        </div>
-        <div>
-          <Button className='py-2 px-8 m-2' onClick={() => changeLanguage("en")}>English</Button>
-          <Button className='py-2 px-8 m-2' onClick={() => changeLanguage("ar")}>Urdu</Button>
         </div>
         <div className='flex flex-row gap-3'>
           {/* <Select
@@ -114,18 +100,6 @@ export default function Home() {
         <DatePicker date={date} setDate={setDate} />
         <Button variant='destructive'>hello</Button>
       </div>
-      <Select>
-        <SelectTrigger className="w-[180px]">
-
-        </SelectTrigger>
-        <SelectContent>
-          {languages.map((language, index) => (
-            <SelectItem onSelect={() => changeLanguage(language.code)} key={index} value={language.code} defaultChecked={language.code == 'en'}  >{language.translateKey}</SelectItem>
-          ))}
-
-
-        </SelectContent>
-      </Select>
       <DropdownMenu>
         <DropdownMenuTrigger className="w-[180px]">
 
