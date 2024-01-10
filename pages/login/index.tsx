@@ -4,6 +4,7 @@ import React, { FormEventHandler, useState } from 'react'
 import Jwt from "jsonwebtoken";
 import { Input } from '@/components/ui/input';
 import nookies, { parseCookies, destroyCookie } from "nookies";
+import { API_CONFIG } from '@/constants/api-config';
 
 const index = () => {
     const router = useRouter();
@@ -21,7 +22,7 @@ const index = () => {
     }
 
     try {
-      const fetchResponse = await fetch("https://localhost:7160/api/Auth/Authenticate", {
+      const fetchResponse = await fetch(`${API_CONFIG.BASE_URL}api/Auth/Authenticate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(obj)
@@ -115,12 +116,12 @@ const index = () => {
                 placeholder="Enter your password"
                 type="password"
               />
-              <div className="flex items-center justify-between mt-2">
-                {/* <Checkbox className="text-sm">Remember me</Checkbox>
+              {/* <div className="flex items-center justify-between mt-2">
+                <Checkbox className="text-sm">Remember me</Checkbox>
                 <Link color="primary" href="#" size="sm">
                   Forgot password?
-                </Link> */}
-              </div>
+                </Link>
+              </div> */}
             </div>
             <div className="grid">
             <Button variant='secondary' type="submit">

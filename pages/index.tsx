@@ -18,6 +18,7 @@ import Navbar from '@/components/header/NavBar';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
 import useDirStore from '@/store/store';
+import NavBar from '@/components/header/NavBar';
 const inter = Inter({ subsets: ['latin'] });
 
 const languages = [
@@ -47,9 +48,9 @@ export default function Home() {
 
   return (
     <>
-    <Navbar />
-    <div dir={direction}  className='flex h-screen w-full items-center justify-center direction-rtl'>
-      <div className=' grid place-items-center'>
+    <NavBar />
+    <div dir={direction}  className='flex h-screen w-full max-w-full items-center justify-center direction-rtl'>
+      <div className='place-items-center'>
         <div>
           <Button className='py-2 px-8 m-2' onClick={() => changeTheme("default")}>default</Button>
           <Button className='py-2 px-8 m-2' onClick={() => changeTheme("dark")}>dark</Button>

@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
-import { useRouter } from 'next/router';
-import Jwt from 'jsonwebtoken';
+import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import axios from 'axios';
-import { LangDropDown } from '@/constants/constants';
-import { ChangeEvent } from 'react';
+import { parseCookies } from 'nookies';
+import { useRouter } from 'next/router';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
-import { parseCookies } from 'nookies';
 import useDirStore from '@/store/store';
-interface MenuItem {
-  id: number;
-  name: string;
-  localizedName: string;
-  href: string;
-  permission?: string;
-  parentId?: number;
-  subItems?: MenuItem[];
-}
+import { LangDropDown } from '@/constants/constants';
+import { API_CONFIG } from '@/constants/api-config';
 
-const Navbar: React.FC = () => {
-  const router = useRouter();
+function classNames(...classes: string[]) {
+    return classes.filter(Boolean).join(' ');
+}
+interface MenuItem {
+    id: number;
+    name: string;
+    localizedName: string;
+    href: string;
+    permission?: string;
+    parentId?: number;
+    subItems?: MenuItem[];
+  }
+const NavBar: React.FC = () => {
+    const router = useRouter();
   const { locale } = router;
   const t = locale === 'en' ? en : ar;
 
@@ -36,50 +38,57 @@ const Navbar: React.FC = () => {
       setDirection('ltr');
     }
   };
+    const [isMenuOpen, setMenuOpen] = useState(false);
+    const [isUserProfileOpen, setUserProfileOpen] = useState(false);
+    const [openDropdownMenu, setOpenDropdownMenu] = useState<string | null>(null);
+    const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+    const [logo, setLogo] = useState('');
+    const [email, setEmail] = useState('');
+
+    const handleToggleUserMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        setUserProfileOpen(!isUserProfileOpen);
+        setOpenDropdownMenu(null);
+    };
+
+    const handleToggleDropdownMenu = (menuName: string, event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        setOpenDropdownMenu((prev) => (prev === menuName ? null : menuName));
+    };
 
 
-  const { resolvedTheme, theme, setTheme } = useTheme();
-  const route = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [logo, setLogo] = useState('');
+    const handleDocumentClick = (event: MouseEvent) => {
+        const isDropdownClick = (event.target as Element).closest('.dropdown-menu');
 
-  const [email, setEmail] = useState('');
-  const getData = (userEmail: string) => {
-    axios
-      .get(`https://localhost:7160/api/Permission/GetMenuItems?userEmail=${userEmail}`)
-      .then((response) => {
-        console.log('get data');
-        setMenuItems(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  };
-
-  const getLogo = (userEmail: string) => {
-    axios
-      .get(`https://localhost:7160/api/Restaurant/GetRestaurantLogo?userEmail=${userEmail}`)
-      .then((response) => {
-        console.log('get logo');
-        console.log(response);
-        setLogo(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  };
-
-  const nestedMenuItems = buildMenuTree(menuItems);
-  const cookies = parseCookies();
-  useEffect(() => {
-    const userEmail = cookies.username;
-    if (userEmail) {
-      setEmail(userEmail);
-      getData(userEmail);
-      getLogo(userEmail);
-    }
-  }, []);
+        if (!isDropdownClick) {
+            setUserProfileOpen(false);
+            setOpenDropdownMenu(null);
+        }
+    };
+    const getData = (userEmail: string) => {
+        axios
+          .get(`${API_CONFIG.BASE_URL}api/Permission/GetMenuItems?userEmail=${userEmail}`)
+          .then((response) => {
+            console.log('get data');
+            setMenuItems(response.data);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      };
+      const getLogo = (userEmail: string) => {
+        axios
+          .get(`${API_CONFIG.BASE_URL}api/Restaurant/GetRestaurantLogo?userEmail=${userEmail}`)
+          .then((response) => {
+            console.log('get logo');
+            console.log(response);
+            setLogo(response.data);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      };
+      const nestedMenuItems = buildMenuTree(menuItems);
 
   function buildMenuTree(menuItems: MenuItem[], parentId = 0): MenuItem[] {
     const menuTree: MenuItem[] = [];
@@ -96,93 +105,184 @@ const Navbar: React.FC = () => {
   
     return menuTree;
   }
-  
+  const cookies = parseCookies();
 
-//  const handleLogin = async () => {
-//     if (window.confirm('Are you sure to Loing from this user !') === true) {
-//       try {
-//           debugger;
-//           const fetchResponse = await fetch(`https://localhost:7160/api/Auth/AuthenticateById?id=${session?.user.saId}`, {
-//               method: 'POST',
-//               headers: { 'Content-Type': 'application/json' },
-//           });
-
-//           if (!fetchResponse.ok) {
-//               throw new Error(`Request failed with status: ${fetchResponse.status}`);
-//           }
-
-//           const resp = await fetchResponse.json();
-//           const json = Jwt.decode(resp.message) as { [key: string]: string };
-//           console.log(json);
-//           signIn("credentials", {
-//               email: json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'],
-//               name: json['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
-//               role: json['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
-//               permission: json['permission'],
-//               saId : json['saId'],
-//               redirect: false,
-//           }).then(() => {
-//               route.push('/');
-//           });
-//       } catch (error) {
-//           console.error('Fetch error:');
-//       }
-//     }}
-
-  return (
-    <>
-      <nav className="bg-gray-800 p-4">
-          <div dir={direction} className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center">
-              <img
-                src={logo}
-                alt="Logo"
-                className="w-12 h-12 md:w-16 md:h-16 mr-4 rounded-full"
-              />
-              <h1 className="text-white text-lg md:text-xl font-semibold">{email}</h1>
+    useEffect(() => {
+        const userEmail = cookies.username;
+        getData(userEmail);
+        getLogo(userEmail);
+        setEmail(userEmail);
+        document.addEventListener('click', handleDocumentClick);
+        return () => {
+            document.removeEventListener('click', handleDocumentClick);
+        };
+    }, []);
+    return (
+        <div dir={direction} className="bg-gray-800 w-full">
+            <div className="mx-auto px-2 sm:px-6 lg:px-8">
+                <div className="relative flex items-center justify-between h-16">
+                    <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
+                        <button
+                            onClick={() => setMenuOpen(!isMenuOpen)}
+                            type="button"
+                            className="inline-flex items-center justify-center p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                        >
+                            {isMenuOpen ? (
+                                <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
+                            ) : (
+                                <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+                            )}
+                        </button>
+                    </div>
+                    <div className="flex-shrink-0 flex items-center">
+                        <img
+                            className="hidden lg:block md:block h-8 w-auto"
+                            src={logo}
+                            alt="abc"
+                        />
+                    </div>
+                    
+                    <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                        {nestedMenuItems.map((menuItem) => (
+                            <div key={menuItem.name} className="ml-3 relative">
+                                {menuItem.subItems ? (
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={(event) => handleToggleDropdownMenu(menuItem.name, event)}
+                                            className="bg-gray-800 flex text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+                                        >
+                                            <span className="sr-only">{`Open ${menuItem.name} menu`}</span>
+                                            <span className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                                                {menuItem.name}
+                                            </span>
+                                        </button>
+                                        {openDropdownMenu === menuItem.name && (
+                                            <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                                {menuItem.subItems.map((subItem) => (
+                                                    <a
+                                                        key={subItem.name}
+                                                        href={subItem.href}
+                                                        className="block px-4 py-2 text-sm text-gray-700"
+                                                    >
+                                                        {subItem.name}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <a
+                                        href={menuItem.href}
+                                        className={classNames(
+                                            'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                                        )}
+                                    >
+                                        {menuItem.name}
+                                    </a>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="ml-3 relative">
+                        <select
+                            onChange={changeLanguage}
+                            value={locale}
+                            className="text-white text-shadow-sm text-lg bg-transparent tracking-wide"
+                        >
+                            {LangDropDown.map((op) => (
+                                <option value={op.value} key={op.id}>
+                                    {op.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="sm:ml-6 sm:flex sm:items-center">
+                    
+                        {/* Profile dropdown */}
+                        <div className="ml-3 relative">
+                            <button
+                                type="button"
+                                onClick={handleToggleUserMenu}
+                                className="bg-gray-800 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+                            >
+                                <span className="sr-only">Open user menu</span>
+                                <img
+                                    className="h-8 w-8 rounded-full"
+                                    src="https://localhost:7160/Image/mine234629318.jpg"
+                                    alt=""
+                                />
+                            </button>
+                        </div>
+                        {isUserProfileOpen && (
+                            <div className="absolute right-0 z-10 mt-48 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                <div className="block px-4 py-2 font-bold text-md text-gray-700" role="menuitem" id="user-menu-item-0">
+                                    {email}
+                                </div>
+                                <a href="/" className="block px-4 py-2 text-sm text-gray-700" role="menuitem" id="user-menu-item-0">
+                                    Your Profile
+                                </a>
+                                <a href="#" className="block px-4 py-2 text-sm text-gray-700" role="menuitem" id="user-menu-item-1">
+                                    Settings
+                                </a>
+                                <a href="/logout"  className="block px-4 py-2 text-sm text-gray-700" role="menuitem" id="user-menu-item-2">
+                                    Sign out
+                                </a>
+                            </div>
+                        )}
+                        
+                    </div>
+                </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <select
-                onChange={changeLanguage}
-                value={locale}
-                className="text-white text-shadow-sm text-lg bg-transparent tracking-wide"
-              >
-                {LangDropDown.map((op) => (
-                  <option value={op.value} key={op.id}>
-                    {op.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-white focus:outline-none"
-              >
-                Menu
-              </button>
 
-              <div className={`absolute top-14 right-0 bg-gray-800 mt-2 p-2 ${isMenuOpen ? '' : 'hidden'}`}>
-                {nestedMenuItems.map((item, index) => (
-                  <div key={`${item}-${index}`}>
-                    {/* Add your logic for nested items here */}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <img
-                  src='https://localhost:7160/Image/mine234629318.jpg'
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full"
-                />
-                <button onClick={() => (location.href = "/logout")} className="text-white">
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-    </>
-  );
+            {isMenuOpen && (
+                <div className="sm:hidden" onClick={() => setMenuOpen(true)}>
+                    <div className="px-2 pt-2 pb-3 space-y-1">
+                        {nestedMenuItems.map((menuItem) => (
+                            <div key={menuItem.name} className="ml-3 relative">
+                                {menuItem.subItems ? (
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={(event) => handleToggleDropdownMenu(menuItem.name, event)}
+                                            className="bg-gray-800 flex text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+                                        >
+                                            <span className="sr-only">{`Open ${menuItem.name} menu`}</span>
+                                            <span className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                                                {menuItem.name}
+                                            </span>
+                                        </button>
+                                        {openDropdownMenu === menuItem.name && (
+                                            <div className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                                {menuItem.subItems.map((subItem) => (
+                                                    <a
+                                                        key={subItem.name}
+                                                        href={subItem.href}
+                                                        className="block px-4 py-2 text-sm text-gray-700"
+                                                    >
+                                                        {subItem.name}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <a
+                                        href={menuItem.href}
+                                        className={classNames(
+                                            'text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
+                                        )}
+                                    >
+                                        {menuItem.name}
+                                    </a>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
-export default Navbar;
+export default NavBar;
