@@ -9,6 +9,7 @@ export type Roles = {
 export type Category = {
     id: number
     name: string
+    description : string
     pic: string
   }
 export type SubCategory = {

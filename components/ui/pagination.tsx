@@ -44,7 +44,7 @@ const PaginationLink = ({
   size = 'icon',
   ...props
 }: PaginationLinkProps) => (
-  <PaginationItem>
+  // <PaginationItem>
     <a
       aria-current={isActive ? 'page' : undefined}
       className={cn(
@@ -56,7 +56,7 @@ const PaginationLink = ({
       )}
       {...props}
     />
-  </PaginationItem>
+  // </PaginationItem>
 );
 PaginationLink.displayName = 'PaginationLink';
 
