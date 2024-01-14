@@ -1,5 +1,5 @@
-import { GetServerSidePropsContext } from "next";
-import nookies from "nookies";
+import { GetServerSidePropsContext } from 'next';
+import nookies from 'nookies';
 const Logout = () => null;
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
@@ -8,14 +8,14 @@ export const getServerSideProps = async (
     httpOnly: false,
     maxAge: 0,
   };
-  nookies.set(context, "token", "", cookieOptions);
-  nookies.set(context, "username", "", cookieOptions);
-  nookies.set(context, "rememberMe", "", cookieOptions);
+  nookies.set(context, 'token', '', cookieOptions);
+  nookies.set(context, 'username', '', cookieOptions);
+  nookies.set(context, 'rememberMe', '', cookieOptions);
 
   // Redirect to login page
   return {
     redirect: {
-      destination: "/",
+      destination: '/',
     },
   };
 };

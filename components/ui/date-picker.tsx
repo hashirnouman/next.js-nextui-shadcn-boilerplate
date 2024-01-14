@@ -12,12 +12,10 @@ import {
 } from '@/components/ui/popover';
 
 interface Props {
-  date: Date | undefined
-  setDate: React.Dispatch<React.SetStateAction<Date | undefined>>
+  date: Date | undefined;
+  setDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
 }
 export function DatePicker({ date, setDate }: Props) {
-
-
   return (
     <Popover>
       <PopoverTrigger asChild>
