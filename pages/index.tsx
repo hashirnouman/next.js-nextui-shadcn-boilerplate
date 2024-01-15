@@ -19,18 +19,11 @@ import {
   DropdownMenuTrigger,
 } from '@radix-ui/react-dropdown-menu';
 import { useRouter } from 'next/router';
-import Navbar from '@/components/header/NavBar';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
-import useDirStore from '@/store/store';
 import NavBar from '@/components/header/NavBar';
 const inter = Inter({ subsets: ['latin'] });
 
-const languages = [
-  { code: 'en', translateKey: 'english' },
-  { code: 'ar', translateKey: 'arabic' },
-  { code: 'es', translateKey: 'spanish' },
-];
 const themes = [
   { code: 'default', translateKey: 'default' },
   { code: 'dark', translateKey: 'dark' },
@@ -47,13 +40,11 @@ export default function Home() {
   const changeTheme = (theme: string) => {
     document.querySelector('html')?.setAttribute('data-theme', theme);
   };
-  const { direction } = useDirStore();
 
   return (
     <>
       <NavBar />
       <div
-        dir={direction}
         className='direction-rtl flex h-screen w-full max-w-full items-center justify-center'
       >
         <div className='place-items-center'>

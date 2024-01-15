@@ -5,9 +5,9 @@ import { parseCookies } from 'nookies';
 import { useRouter } from 'next/router';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
-import useDirStore from '@/store/store';
-import { LangDropDown } from '@/constants/constants';
+import { LangDropDown, themes } from '@/constants/constants';
 import { API_CONFIG } from '@/constants/api-config';
+import { Context } from '@/contexts/UseContext';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -26,16 +26,21 @@ const NavBar: React.FC = () => {
   const { locale } = router;
   const t = locale === 'en' ? en : ar;
 
-  const { direction, setDirection } = useDirStore();
+  const { setDirection, setTheme } = Context();
 
   const changeLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedLocale = e.target.value;
     router.push(router.pathname, router.asPath, { locale: selectedLocale });
     if (selectedLocale == 'ar') {
       setDirection('rtl');
+
     } else {
       setDirection('ltr');
     }
+  };
+  const changeTheme = (e: ChangeEvent<HTMLSelectElement>) => {
+    setTheme(e.target.value);
+    setDataTheme(e.target.value);
   };
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isUserProfileOpen, setUserProfileOpen] = useState(false);
@@ -43,6 +48,7 @@ const NavBar: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [logo, setLogo] = useState('');
   const [email, setEmail] = useState('');
+  const [dataTheme, setDataTheme] = useState('');
 
   const handleToggleUserMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -113,6 +119,8 @@ const NavBar: React.FC = () => {
   const cookies = parseCookies();
 
   useEffect(() => {
+    var dataTheme = document.documentElement.getAttribute('data-theme') || '';
+    setDataTheme(dataTheme);
     const userEmail = cookies.username;
     getData(userEmail);
     getLogo(userEmail);
@@ -123,7 +131,7 @@ const NavBar: React.FC = () => {
     };
   }, []);
   return (
-    <div dir={direction} className='w-full bg-gray-800'>
+    <div className='w-full bg-gray-800'>
       <div className='mx-auto px-2 sm:px-6 lg:px-8'>
         <div className='relative flex h-16 items-center justify-between'>
           <div className='absolute inset-y-0 left-0 flex items-center sm:hidden'>
@@ -199,6 +207,18 @@ const NavBar: React.FC = () => {
             >
               {LangDropDown.map((op) => (
                 <option value={op.value} key={op.id}>
+                  {op.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              onChange={changeTheme}
+              value={dataTheme}
+              className='text-shadow-sm bg-transparent text-lg tracking-wide text-white'
+            >
+              {themes.map((op) => (
+                <option value={op.value} key={op.value}>
                   {op.label}
                 </option>
               ))}

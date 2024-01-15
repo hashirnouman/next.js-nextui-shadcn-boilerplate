@@ -10,3 +10,8 @@ export const LangDropDown = [
     label: 'عربی',
   },
 ];
+
+export const themes = [
+  { value: 'default', label: 'default' },
+  { value: 'dark', label: 'dark' },
+];
