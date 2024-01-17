@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableHeader,
@@ -16,39 +16,33 @@ import {
   PaginationLink,
   PaginationPrevious,
   PaginationNext,
-} from '@/components/ui/pagination'; // Adjust the path accordingly
+} from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import NavBar from '@/components/header/NavBar';
 import { Category } from '@/types/types';
-import axios from 'axios';
-import { API_CONFIG } from '@/constants/api-config';
+import { useQuery } from '@tanstack/react-query';
+import { addCategory, deleteCategory, getCategory, getCategories } from '@/services/category';
+import { useToast } from "@/components/ui/use-toast"
 
 const Categories = () => {
   const [id, setId] = useState<string>('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
-
-  const [data, setData] = useState<Category[]>([]);
-  const [pages, setPages] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [search, setSearch] = useState('');
-  const getData = (page = 1, pageSize = 5, search = '') => {
-    axios
-      .get(
-        `${API_CONFIG.BASE_URL}api/Category?page=${page}&pageSize=${pageSize}&search=${search}`
-      )
-      .then((response) => {
-        setData(response.data.clientPreferences);
-        setPages(response.data.totalPages);
-        setTotalRecords(response.data.totalRecords);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  };
+  const [nameSearch, setNameSearch] = useState('');
+  const [descriptionSearch, setDescriptionSearch] = useState('');
+  const { toast } = useToast()
+
+  const {
+    data: categoryData,
+    refetch,
+  } = useQuery({
+    queryKey: ['categories', page, rowsPerPage, nameSearch, descriptionSearch],
+    queryFn: () => getCategories(page, rowsPerPage, nameSearch, descriptionSearch),
+  });
+  console.log(categoryData);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -60,10 +54,6 @@ const Categories = () => {
     setDescription('');
     setImage(null);
   };
-  useEffect(() => {
-    getData(page, rowsPerPage, search);
-  }, [page, rowsPerPage, search]);
-
   const handlePageChange = (page: number) => {
     setPage(page);
   };
@@ -71,8 +61,17 @@ const Categories = () => {
     setRowsPerPage(rowsPerPage);
     setPage(1);
   };
-  const onSearchChange = (value?: string) => {
-    setSearch(value ?? '');
+  const onSearchChange = (value?: string, columnName?: string) => {
+    switch (columnName) {
+      case 'name':
+        setNameSearch(value ?? '');
+        break;
+      case 'description':
+        setDescriptionSearch(value ?? '');
+        break;
+      default:
+        break;
+    }
     setPage(1);
   };
 
@@ -86,68 +85,64 @@ const Categories = () => {
     setModalOpen(false);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    const url = `${API_CONFIG.BASE_URL}api/Category`;
-    let config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    };
-    let data = {};
-    if (id === '') {
-      data = {
-        name: name,
-        description: description,
-        image: image,
-      };
-    } else {
-      data = {
-        id: parseInt(id, 10),
-        name: name,
-        description: description,
-      };
+    const formData = new FormData();
+    if(id !== '0'){
+      formData.append('Id', id);
+    }
+    formData.append('Name', name);
+    formData.append('Description', description);
+    if (image) {
+      formData.append('Image', image);
     }
 
-    axios
-      .post(url, data, config)
-      .then((result) => {
-        getData(page, rowsPerPage, search);
+    try {
+      const result = await addCategory(formData);
+      if (result.color === "success") {
+        refetch();
         clear();
         closeModal();
-        alert('Record has been saved.');
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  };
-  const handleEdit = (id: string) => {
-    axios
-      .get(`${API_CONFIG.BASE_URL}api/Category/GetById?id=${id}`)
-      .then((result) => {
-        setName(result.data.name);
-        setDescription(result.data.description);
-        setId(id);
-        openModal();
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+        toast({
+          title: result.management,
+          description: result.msg,
+        })
+      } else {
+        console.error(result.error);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleEdit = async (id: string) => {
+    try {
+      const userData = await getCategory(id);
+      if (Object.keys(userData).length !== 0) {
+        setName(userData.name);
+        setDescription(userData.description);
+        setId(id);
+        openModal();
+      } else {
+        console.error(`User with ID ${id} not found.`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure to delete this record?')) {
-      axios
-        .delete(`${API_CONFIG.BASE_URL}api/Category?id=${id}`)
-        .then(() => {
-          alert('Record has been deleted.');
-          getData(page, rowsPerPage, search);
+      const result = await deleteCategory(id);
+      if (result.color === "success") {
+        refetch();
+        toast({
+          title: result.management,
+          description: result.msg,
         })
-        .catch((error) => {
-          console.error(error);
-          alert('Error occurred while deleting record.');
-        });
+      } else {
+        console.error(result.error);
+      }
     }
   };
   return (
@@ -156,12 +151,12 @@ const Categories = () => {
       <section className='my-2 flex items-center justify-center'>
         <div className='container'>
           <div className='flex items-end justify-between gap-3'>
-            <Input
+            {/* <Input
               className='h-12 w-full sm:max-w-[44%]'
               placeholder='search'
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-            />
+            /> */}
             <div className='flex gap-3'>
               <Button onClick={openModal} color='primary'>
                 Add New
@@ -170,7 +165,7 @@ const Categories = () => {
           </div>
           <div className='flex items-center justify-between'>
             <span className='text-default-400 text-small'>
-              total {totalRecords} records
+              total {categoryData?.totalRecords} records
             </span>
             <label className='text-default-400 text-small flex items-center'>
               record per page
@@ -189,13 +184,31 @@ const Categories = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead>
+                  Name
+                  <Input
+                    type='text'
+                    placeholder='Search by Name'
+                    value={nameSearch}
+                    onChange={(e) => onSearchChange(e.target.value, 'name')}
+                  />
+                </TableHead>
+                <TableHead>
+                  Description
+                  <Input
+                    type='text'
+                    placeholder='Search by Description'
+                    value={descriptionSearch}
+                    onChange={(e) =>
+                      onSearchChange(e.target.value, 'description')
+                    }
+                  />
+                </TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((item) => (
+              {categoryData?.clientPreferences?.map((item: Category) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.name}</TableCell>
                   <TableCell>{item.description}</TableCell>
@@ -227,7 +240,7 @@ const Categories = () => {
                       isActive={page !== 1}
                     />
                     <PaginationContent>
-                      {[...Array(pages)].map((_, index) => (
+                      {[...Array(categoryData?.totalPages)].map((_, index) => (
                         <PaginationItem key={index}>
                           <PaginationLink
                             onClick={() => handlePageChange(index + 1)}
@@ -240,7 +253,7 @@ const Categories = () => {
                     </PaginationContent>
                     <PaginationNext
                       onClick={() => handlePageChange(page + 1)}
-                      isActive={page !== pages}
+                      isActive={page !== categoryData?.totalPages}
                     />
                   </Pagination>
                 </TableCell>

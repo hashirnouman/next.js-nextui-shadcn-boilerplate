@@ -1,5 +1,5 @@
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+//import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { parseCookies } from 'nookies';
 import { useRouter } from 'next/router';
@@ -141,9 +141,11 @@ const NavBar: React.FC = () => {
               className='inline-flex items-center justify-center p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white'
             >
               {isMenuOpen ? (
-                <XMarkIcon className='block h-6 w-6' aria-hidden='true' />
+                // <XMarkIcon className='block h-6 w-6' aria-hidden='true' />
+                <div className='block h-6 w-6' aria-hidden='true'>Open</div>
               ) : (
-                <Bars3Icon className='block h-6 w-6' aria-hidden='true' />
+                // <Bars3Icon className='block h-6 w-6' aria-hidden='true' />
+                <div className='block h-6 w-6' aria-hidden='true'>Close</div>
               )}
             </button>
           </div>

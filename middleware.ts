@@ -31,9 +31,9 @@ export async function middleware(request: NextRequest) {
           lastPathSegment === ''
         );
       });
-      if (!isAllowed) {
-        return NextResponse.redirect(new URL('/notallowed', request.url));
-      }
+      // if (!isAllowed) {
+      //   return NextResponse.redirect(new URL('/notallowed', request.url));
+      // }
       // User is logged in - by primaryToken
 
       // Accessing authRoutes when the user is logged in

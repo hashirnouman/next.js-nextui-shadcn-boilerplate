@@ -16,7 +16,6 @@ export const ContextProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 
   useEffect(() => {
-    // Update the direction in the Head component when it changes
     document.documentElement.setAttribute('dir', direction);
     document.documentElement.setAttribute('data-theme', theme);
   }, [direction, theme]);
