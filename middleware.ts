@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
     if (success) {
       const json = Jwt.decode(tokenCookie.value) as { permission: string[] };
       const permissions = json['permission'];
-      const isAllowed = permissions.some((permission) => {
+      const isAllowed = permissions?.some((permission) => {
         const permissionSegments = permission.split('.');
         const permissionName = permissionSegments[1];
         const permissionType = permissionSegments[2];

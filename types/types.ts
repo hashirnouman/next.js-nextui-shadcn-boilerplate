@@ -9,6 +9,7 @@ export type Roles = {
 export type Category = {
   id: number;
   name: string;
+  localizedName : string;
   description: string;
   pic: string;
 };

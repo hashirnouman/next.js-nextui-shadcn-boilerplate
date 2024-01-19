@@ -19,70 +19,47 @@ import {
 } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import NavBar from '@/components/header/NavBar';
-import { Category } from '@/types/types';
+import { Tenants } from '@/types/types';
 import { useQuery } from '@tanstack/react-query';
 import {
-  addCategory,
-  deleteCategory,
-  getCategory,
-  getCategories,
-} from '@/services/category';
+  addUser,
+  deleteUser,
+  getUser,
+  getUsers,
+} from '@/services/user';
 import { useToast } from '@/components/ui/use-toast';
-import en from '@/locales/en';
-import ar from '@/locales/ar';
-import { useRouter } from 'next/router';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
-
-const Categories = () => {
-  const router = useRouter();
-  const { locale } = router;
-  const t = locale === 'en' ? en : ar;
-
-  const [id, setId] = useState<string>('');
-  const [name, setName] = useState('');
-  const [localizedName, setLocalizedName] = useState('');
-  const [description, setDescription] = useState('');
-  const [image, setImage] = useState<File | null>(null);
+import { parseCookies } from 'nookies';
+import Jwt from 'jsonwebtoken';
+const Users = () => {
+    const cookies = parseCookies();
+const token = cookies.token;
+const jsonToken = Jwt.decode(token) as { [key: string]: string } | null;
+const tenantId = jsonToken ? jsonToken['tenantId'] || "" : "";
+    const [id, setId] = useState('');
+    const [userName, setUserName] = useState('');
+    const [localizedName, setLocalizedName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [role, setRole] = useState('');
+    //const [tenantId, setTenantId] = useState('');
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [nameSearch, setNameSearch] = useState('');
-  const [descriptionSearch, setDescriptionSearch] = useState('');
-  const [sortBy, setSortBy] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<string>('asc');
-  const [searchBoxesVisible, setSearchBoxesVisible] = useState(false);
   const { toast } = useToast();
 
-  const { data: categoryData, refetch } = useQuery({
-    queryKey: [
-      'categories',
-      page,
-      rowsPerPage,
-      nameSearch,
-      descriptionSearch,
-      sortBy,
-      sortOrder,
-    ],
-    queryFn: () =>
-      getCategories(
-        page,
-        rowsPerPage,
-        nameSearch,
-        descriptionSearch,
-        sortBy,
-        sortOrder
-      ),
+  const { data: usersData, refetch } = useQuery({
+    queryKey: ['tenants', page, rowsPerPage, nameSearch],
+    queryFn: () => getUsers(page, rowsPerPage, nameSearch),
   });
-  console.log(categoryData);
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImage(file);
-    }
-  };
+  console.log(usersData);
   const clear = () => {
-    setName('');
-    setDescription('');
-    setImage(null);
+    setId('');
+    setUserName('');
+    setEmail('');
+    setPassword('');
+    setPhoneNumber('');
+    //setTenantId('');
   };
   const handlePageChange = (page: number) => {
     setPage(page);
@@ -96,23 +73,15 @@ const Categories = () => {
       case 'name':
         setNameSearch(value ?? '');
         break;
-      case 'description':
-        setDescriptionSearch(value ?? '');
-        break;
+      // case 'description':
+      //   setDescriptionSearch(value ?? '');
+      //   break;
       default:
         break;
     }
     setPage(1);
   };
-  const handleSort = (columnName: string) => {
-    debugger;
-    const newSortOrder =
-      columnName === sortBy && sortOrder === 'asc' ? 'desc' : 'asc';
 
-    setSortBy(columnName);
-    setSortOrder(newSortOrder);
-    setPage(1);
-  };
   const [isModalOpen, setModalOpen] = useState(false);
 
   const openModal = () => {
@@ -125,19 +94,34 @@ const Categories = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const formData = new FormData();
-    if (id !== '') {
-      formData.append('Id', id);
-    }
-    formData.append('Name', name);
-    formData.append('LocalizedName', localizedName);
-    formData.append('Description', description);
-    if (image) {
-      formData.append('Image', image);
-    }
-
+    debugger;
+    let data = {};
+    if (id === '') {
+        data = {
+          userName,
+          localizedName,
+          email,
+          password,
+          phoneNumber,
+          role: 'Admin',
+          tenantId,
+        }
+      }
+      else {
+        data = {
+          id: parseInt(id, 10),
+          userName,
+          localizedName,
+          email,
+          password,
+          phoneNumber,
+          role: 'Admin',
+          tenantId,
+        }
+      }
+    debugger;
     try {
-      const result = await addCategory(formData);
+      const result = await addUser(data);
       if (result.color === 'success') {
         refetch();
         clear();
@@ -156,11 +140,10 @@ const Categories = () => {
 
   const handleEdit = async (id: string) => {
     try {
-      const userData = await getCategory(id);
+      const userData = await getUser(id);
       if (Object.keys(userData).length !== 0) {
-        setName(userData.name);
-        setDescription(userData.description);
-        setLocalizedName(userData.localizedName);
+        setUserName(userData.userName);
+        setEmail(userData.email);
         setId(id);
         openModal();
       } else {
@@ -173,7 +156,7 @@ const Categories = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure to delete this record?')) {
-      const result = await deleteCategory(id);
+      const result = await deleteUser(id);
       if (result.color === 'success') {
         refetch();
         toast({
@@ -199,16 +182,16 @@ const Categories = () => {
             /> */}
             <div className='flex gap-3'>
               <Button onClick={openModal} color='primary'>
-                {t.addNew}
+                Add New
               </Button>
             </div>
           </div>
           <div className='flex items-center justify-between'>
             <span className='text-default-400 text-small'>
-              {t.total + ' ' + categoryData?.totalRecords + ' ' + t.records}
+              total {usersData?.totalRecords} records
             </span>
             <label className='text-default-400 text-small flex items-center'>
-              {t.recordsPerPage}
+              record per page
               <select
                 className='text-default-400 text-small bg-transparent outline-none'
                 onChange={(e) =>
@@ -225,75 +208,35 @@ const Categories = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>
-                  <div className="flex items-center" onClick={() => handleSort('name')}>
-                  {t.name}
-                  {sortBy === 'name' ? (
-                    <span className='ml-2'>
-                      {sortOrder === 'asc' ? <ChevronUp /> : <ChevronDown />}
-                    </span>
-                  ) : (
-                    <span className='ml-2'>
-                      <ChevronDown />
-                    </span>
-                  )}
-                  </div>
+                  Name
                   <Input
                     type='text'
-                    placeholder={t.search}
+                    placeholder='Search by Name'
                     value={nameSearch}
                     onChange={(e) => onSearchChange(e.target.value, 'name')}
-                    className={`search-box w-[50%] ${sortBy !== 'name' && 'hidden'}`}
                   />
                 </TableHead>
-                <TableHead>
-                  <div className="flex items-center" onClick={() => handleSort('description')}>
-                  {t.description}
-                  {sortBy === 'description' ? (
-                    <span className='ml-2'>
-                      {sortOrder === 'asc' ? <ChevronUp /> : <ChevronDown />}
-                    </span>
-                  ) : (
-                    <span className='ml-2'>
-                      <ChevronDown />
-                    </span>
-                  )}
-                  </div>
-                  <Input
-                    type='text'
-                    placeholder={t.search}
-                    value={descriptionSearch}
-                    onChange={(e) =>
-                      onSearchChange(e.target.value, 'description')
-                    }
-                    className={`w-[50%] ${
-                      sortBy !== 'description' && 'hidden'
-                    }`}
-                  />
-                </TableHead>
-                <TableHead>{t.action}</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categoryData?.clientPreferences?.map((item: Category) => (
+              {usersData?.users?.map((item: any) => (
                 <TableRow key={item.id}>
+                  <TableCell>{item.userName}</TableCell>
                   <TableCell>
-                    {locale === 'ar' ? item.localizedName : item.name}
-                  </TableCell>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell className='gap-2'>
                     {/* Edit button */}
                     <Button
                       onClick={() => handleEdit(item.id.toString())}
                       variant='secondary'
                     >
-                      {t.edit}
+                      Edit
                     </Button>
                     <Button
                       onClick={() => handleDelete(item.id.toString())}
                       variant='destructive'
                       className='ml-6'
                     >
-                      {t.delete}
+                      Delete
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -306,27 +249,25 @@ const Categories = () => {
                     <PaginationPrevious
                       onClick={() => setPage(page - 1)}
                       isActive={page !== 1}
-                    >
-                      {t.previous}
-                    </PaginationPrevious>
+                    />
                     <PaginationContent>
-                      {[...Array(categoryData?.totalPages)].map((_, index) => (
-                        <PaginationItem key={index}>
-                          <PaginationLink
-                            onClick={() => handlePageChange(index + 1)}
-                            isActive={page === index + 1}
-                          >
-                            {index + 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ))}
+                      {[...Array(usersData?.totalPages)].map(
+                        (_, index) => (
+                          <PaginationItem key={index}>
+                            <PaginationLink
+                              onClick={() => handlePageChange(index + 1)}
+                              isActive={page === index + 1}
+                            >
+                              {index + 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      )}
                     </PaginationContent>
                     <PaginationNext
                       onClick={() => handlePageChange(page + 1)}
-                      isActive={page !== categoryData?.totalPages}
-                    >
-                      {t.next}
-                    </PaginationNext>
+                      isActive={page !== usersData?.totalPages}
+                    />
                   </Pagination>
                 </TableCell>
               </TableRow>
@@ -336,9 +277,9 @@ const Categories = () => {
           {isModalOpen && (
             <div className='fixed inset-0 flex items-center justify-center overflow-y-auto overflow-x-hidden'>
               <div className='relative max-h-full w-full max-w-md p-4'>
-                <div className='relative rounded-lg bg-background'>
+                <div className='relative rounded-lg shadow default:bg-white dark:bg-gray-700'>
                   <div className='flex items-center justify-between rounded-t border-b p-4 md:p-5 dark:border-gray-600'>
-                    <h3 className='text-xl font-semibold text-secondary-foreground'>
+                    <h3 className='text-xl font-semibold default:text-gray-900 dark:text-white'>
                       Add Or Update Record
                     </h3>
                     <button
@@ -366,50 +307,63 @@ const Categories = () => {
                   </div>
                   <div className='p-4 md:p-5'>
                     <form className='space-y-4' onSubmit={handleSubmit}>
-                      <label className='mb-2 block text-sm font-medium text-secondary-foreground'>
+                      <label className='mb-2 block text-sm font-medium text-gray-900 dark:text-white'>
                         Name
                       </label>
                       <Input
                         type='text'
-                        name='name'
-                        id='name'
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder='name'
+                        name='email'
+                        id='email'
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400'
+                        placeholder='User Name'
                         required
                       />
-                      <label className='mb-2 block text-sm font-medium text-secondary-foreground'>
+                      <label className='mb-2 block text-sm font-medium text-gray-900 dark:text-white'>
                         Localized Name
                       </label>
                       <Input
                         type='text'
-                        name='localizedName'
-                        id='localizedName'
                         value={localizedName}
                         onChange={(e) => setLocalizedName(e.target.value)}
                         placeholder='Localized Name'
+                        className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400'
                         required
                       />
-                      <label className='mb-2 block text-sm font-medium text-secondary-foreground'>
-                        Description
+                      <label className='mb-2 block text-sm font-medium text-gray-900 dark:text-white'>
+                        Email
+                      </label>
+                      <Input
+                        type='email'
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder='email@example.com'
+                        className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400'
+                        required
+                      />
+                      <label className='mb-2 block text-sm font-medium text-gray-900 dark:text-white'>
+                        Password
+                      </label>
+                      <Input
+                        type='password'
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder='*******'
+                        className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400'
+                        required
+                      />
+                      <label className='mb-2 block text-sm font-medium text-gray-900 dark:text-white'>
+                        Phone Number
                       </label>
                       <Input
                         type='text'
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder='description'
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder='Localized Name'
+                        className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400'
                         required
                       />
-                      <label className='mb-2 block text-sm font-medium text-secondary-foreground'>
-                        Upload Image
-                      </label>
-                      <Input
-                        type='file'
-                        accept='image/*'
-                        className='text-secondary-foreground'
-                        onChange={handleImageChange}
-                      />
-
                       <Button
                         type='submit'
                         className='w-full rounded-lg bg-blue-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800'
@@ -428,4 +382,4 @@ const Categories = () => {
   );
 };
 
-export default Categories;
+export default Users;
