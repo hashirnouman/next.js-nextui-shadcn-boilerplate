@@ -3,4 +3,7 @@ module.exports = {
     locales: ['en', 'ar'],
     defaultLocale: 'en',
   },
+  images: {
+    domains: ['localhost'],
+  },
 };

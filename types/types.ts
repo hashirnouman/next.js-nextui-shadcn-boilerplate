@@ -18,6 +18,10 @@ export type SubCategory = {
   name: string;
   pic: string;
 };
+export type OrderDetails = {
+  totalPrice: number;
+  pic: string;
+};
 export type Item = {
   id: number;
   name: string;

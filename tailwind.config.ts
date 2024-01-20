@@ -36,6 +36,22 @@ const config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        cyan: {
+          DEFAULT: 'hsl(var(--cyan))',
+          foreground: 'hsl(var(--cyan-foreground))',
+        },
+        yellow: {
+          DEFAULT: 'hsl(var(--yellow))',
+          foreground: 'hsl(var(--yellow-foreground))',
+        },
+        light: {
+          DEFAULT: 'hsl(var(--light))',
+          foreground: 'hsl(var(--light-foreground))',
+        },
+        gray: {
+          DEFAULT: 'hsl(var(--gray))',
+          foreground: 'hsl(var(--gray-foreground))',
+        },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',

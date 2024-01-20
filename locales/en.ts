@@ -13,5 +13,9 @@ export default {
   name : "Name",
   description : "Description",
   action : "Action",
-  isActive : "Is Active"
+  isActive : "Is Active",
+  cancel : "Cancel",
+  continue : "Continue",
+  confirmationTitle : "Confirmation",
+  confirmationDelete : "Do you want to delete this record ?"
 };

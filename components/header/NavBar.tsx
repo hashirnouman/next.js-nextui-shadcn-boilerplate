@@ -1,4 +1,5 @@
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
+import Image from 'next/image';
 //import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { parseCookies } from 'nookies';
@@ -13,7 +14,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 interface MenuItem {
-  id: number;
+  itemId: number;
   name: string;
   localizedName: string;
   href: string;
@@ -33,7 +34,6 @@ const NavBar: React.FC = () => {
     router.push(router.pathname, router.asPath, { locale: selectedLocale });
     if (selectedLocale == 'ar') {
       setDirection('rtl');
-
     } else {
       setDirection('ltr');
     }
@@ -78,7 +78,7 @@ const NavBar: React.FC = () => {
         `${API_CONFIG.BASE_URL}api/Permission/GetMenuItems?userEmail=${userEmail}`
       )
       .then((response) => {
-        console.log('get data');
+        console.log(response);
         setMenuItems(response.data);
       })
       .catch((error) => {
@@ -107,7 +107,7 @@ const NavBar: React.FC = () => {
     menuItems
       .filter((item) => item.parentId === parentId)
       .forEach((item) => {
-        const subItems = buildMenuTree(menuItems, item.id);
+        const subItems = buildMenuTree(menuItems, item.itemId);
         if (subItems.length > 0) {
           item.subItems = subItems;
         }
@@ -130,6 +130,13 @@ const NavBar: React.FC = () => {
       document.removeEventListener('click', handleDocumentClick);
     };
   }, []);
+  const handleImageError = (
+    event: React.SyntheticEvent<HTMLImageElement, Event>
+  ) => {
+    // This function is called when the logo image encounters an error.
+    // You can set a default image here.
+    event.currentTarget.src = 'vercel.svg'; // Display vercel.svg on error
+  };
   return (
     <div className='w-full bg-gray-800'>
       <div className='mx-auto px-2 sm:px-6 lg:px-8'>
@@ -142,18 +149,23 @@ const NavBar: React.FC = () => {
             >
               {isMenuOpen ? (
                 // <XMarkIcon className='block h-6 w-6' aria-hidden='true' />
-                <div className='block h-6 w-6' aria-hidden='true'>Open</div>
+                <div className='block h-6 w-6' aria-hidden='true'>
+                  Open
+                </div>
               ) : (
                 // <Bars3Icon className='block h-6 w-6' aria-hidden='true' />
-                <div className='block h-6 w-6' aria-hidden='true'>Close</div>
+                <div className='block h-6 w-6' aria-hidden='true'>
+                  Close
+                </div>
               )}
             </button>
           </div>
           <div className='flex flex-shrink-0 items-center'>
-            <img
+            <Image
               className='hidden h-8 w-auto md:block lg:block'
               src={logo}
-              alt='abc'
+              alt='Logo'
+              onError={handleImageError}
             />
           </div>
 
@@ -229,18 +241,51 @@ const NavBar: React.FC = () => {
           <div className='sm:ml-6 sm:flex sm:items-center'>
             {/* Profile dropdown */}
             <div className='relative ml-3'>
-              <button
-                type='button'
-                onClick={handleToggleUserMenu}
-                className='flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800'
-              >
-                <span className='sr-only'>Open user menu</span>
-                <img
-                  className='h-8 w-8 rounded-full'
-                  src='https://localhost:7160/Image/mine234629318.jpg'
-                  alt=''
-                />
-              </button>
+              <div className='relative'>
+                <button
+                  type='button'
+                  onClick={(event) =>
+                    handleToggleDropdownMenu('StaticDropdown', event)
+                  }
+                  className='flex rounded-xl bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800'
+                >
+                  <span className='sr-only'>Open Static Dropdown menu</span>
+                  <img
+                    className='h-8 w-8 rounded-full'
+                    src='https://localhost:7160/Image/mine234629318.jpg'
+                    alt='Static Dropdown'
+                  />
+                </button>
+                {openDropdownMenu === 'StaticDropdown' && (
+                  <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
+                    <div
+                      className='text-md block px-4 py-2 text-sm font-bold text-gray-700'
+                      role='menuitem'
+                      id='user-menu-item-0'
+                    >
+                      {email}
+                    </div>
+                    <a
+                      href='/static-item-1'
+                      className='block px-4 py-2 text-sm text-gray-700'
+                    >
+                      Your Profile
+                    </a>
+                    <a
+                      href='/static-item-2'
+                      className='block px-4 py-2 text-sm text-gray-700'
+                    >
+                      Settings
+                    </a>
+                    <a
+                      href='/logout'
+                      className='block px-4 py-2 text-sm text-gray-700'
+                    >
+                      SignOut
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
             {isUserProfileOpen && (
               <div className='absolute right-0 z-10 mt-48 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>

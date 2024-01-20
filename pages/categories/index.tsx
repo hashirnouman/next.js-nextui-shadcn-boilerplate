@@ -32,6 +32,7 @@ import en from '@/locales/en';
 import ar from '@/locales/ar';
 import { useRouter } from 'next/router';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
+import ConfirmationDialog from '@/components/alerts/ConfirmationDialog';
 
 const Categories = () => {
   const router = useRouter();
@@ -49,7 +50,9 @@ const Categories = () => {
   const [descriptionSearch, setDescriptionSearch] = useState('');
   const [sortBy, setSortBy] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<string>('asc');
-  const [searchBoxesVisible, setSearchBoxesVisible] = useState(false);
+  const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<string>('');
+
   const { toast } = useToast();
 
   const { data: categoryData, refetch } = useQuery({
@@ -171,9 +174,28 @@ const Categories = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure to delete this record?')) {
-      const result = await deleteCategory(id);
+  // const handleDelete = async (id: string) => {
+  //   if (window.confirm('Are you sure to delete this record?')) {
+  //     const result = await deleteCategory(id);
+  //     if (result.color === 'success') {
+  //       refetch();
+  //       toast({
+  //         title: result.management,
+  //         description: result.msg,
+  //       });
+  //     } else {
+  //       console.error(result.error);
+  //     }
+  //   }
+  // };
+  const handleDelete = (id: string) => {
+    setRecordToDelete(id);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleDeleteConfirmation = async () => {
+    if (recordToDelete) {
+      const result = await deleteCategory(recordToDelete);
       if (result.color === 'success') {
         refetch();
         toast({
@@ -184,6 +206,13 @@ const Categories = () => {
         console.error(result.error);
       }
     }
+    setRecordToDelete('');
+    setDeleteConfirmationOpen(false);
+  };
+
+  const handleCancelDelete = () => {
+    setRecordToDelete('');
+    setDeleteConfirmationOpen(false);
   };
   return (
     <>
@@ -225,38 +254,46 @@ const Categories = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>
-                  <div className="flex items-center" onClick={() => handleSort('name')}>
-                  {t.name}
-                  {sortBy === 'name' ? (
-                    <span className='ml-2'>
-                      {sortOrder === 'asc' ? <ChevronUp /> : <ChevronDown />}
-                    </span>
-                  ) : (
-                    <span className='ml-2'>
-                      <ChevronDown />
-                    </span>
-                  )}
+                  <div
+                    className='flex items-center'
+                    onClick={() => handleSort('name')}
+                  >
+                    {t.name}
+                    {sortBy === 'name' ? (
+                      <span className='ml-2'>
+                        {sortOrder === 'asc' ? <ChevronUp /> : <ChevronDown />}
+                      </span>
+                    ) : (
+                      <span className='ml-2'>
+                        <ChevronDown />
+                      </span>
+                    )}
                   </div>
                   <Input
                     type='text'
                     placeholder={t.search}
                     value={nameSearch}
                     onChange={(e) => onSearchChange(e.target.value, 'name')}
-                    className={`search-box w-[50%] ${sortBy !== 'name' && 'hidden'}`}
+                    className={`search-box w-[50%] ${
+                      sortBy !== 'name' && 'hidden'
+                    }`}
                   />
                 </TableHead>
                 <TableHead>
-                  <div className="flex items-center" onClick={() => handleSort('description')}>
-                  {t.description}
-                  {sortBy === 'description' ? (
-                    <span className='ml-2'>
-                      {sortOrder === 'asc' ? <ChevronUp /> : <ChevronDown />}
-                    </span>
-                  ) : (
-                    <span className='ml-2'>
-                      <ChevronDown />
-                    </span>
-                  )}
+                  <div
+                    className='flex items-center'
+                    onClick={() => handleSort('description')}
+                  >
+                    {t.description}
+                    {sortBy === 'description' ? (
+                      <span className='ml-2'>
+                        {sortOrder === 'asc' ? <ChevronUp /> : <ChevronDown />}
+                      </span>
+                    ) : (
+                      <span className='ml-2'>
+                        <ChevronDown />
+                      </span>
+                    )}
                   </div>
                   <Input
                     type='text'
@@ -422,6 +459,14 @@ const Categories = () => {
               </div>
             </div>
           )}
+          {/* Confirmation Dialog */}
+          <ConfirmationDialog
+            onConfirmed={handleDeleteConfirmation}
+            onCancel={handleCancelDelete}
+            isOpen={isDeleteConfirmationOpen}
+            title={t.confirmationTitle}
+            description={t.confirmationDelete}
+          />
         </div>
       </section>
     </>

@@ -13,5 +13,9 @@ export default {
   name : "نام",
   description : "ڈسکرپشن",
   action: "ایکشن",
-  isActive : "از ایکٹیو"
+  isActive : "از ایکٹیو",
+  cancel : "کینسل",
+  continue : "جاری رکھیں",
+  confirmationTitle : "کنفرمیشن",
+  confirmationDelete : "کیا آپ یہ ریکارڈ ڈیلیٹ کرنا چاہتے ہیں ؟"
 };
