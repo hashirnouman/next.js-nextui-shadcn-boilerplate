@@ -34,7 +34,6 @@ const Login = () => {
       const resp = await fetchResponse.json();
       console.log(resp);
       if (!fetchResponse.ok) {
-        debugger;
         if (resp.errors) {
           setEmailError(resp.errors.Email);
           setPasswordError(resp.errors.Password);

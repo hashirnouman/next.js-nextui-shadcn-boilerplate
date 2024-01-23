@@ -94,7 +94,6 @@ const tenantId = jsonToken ? jsonToken['tenantId'] || "" : "";
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    debugger;
     let data = {};
     if (id === '') {
         data = {
@@ -119,7 +118,6 @@ const tenantId = jsonToken ? jsonToken['tenantId'] || "" : "";
           tenantId,
         }
       }
-    debugger;
     try {
       const result = await addUser(data);
       if (result.color === 'success') {

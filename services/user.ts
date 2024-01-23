@@ -46,7 +46,6 @@ export const getUser = async (id: string) => {
 // posting a user
 export async function addUser(data: any) {
     try {
-        debugger;
         const url = `${API_CONFIG.BASE_URL}api/Auth/Register`;
         const requestOptions = {
             method: 'POST',

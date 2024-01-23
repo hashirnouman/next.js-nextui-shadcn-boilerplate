@@ -58,6 +58,7 @@ export default function Home() {
             <Button
               className='m-2 px-8 py-2'
               onClick={() => changeTheme('dark')}
+              isLoading = {true}
             >
               dark
             </Button>

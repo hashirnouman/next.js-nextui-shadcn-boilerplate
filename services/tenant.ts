@@ -21,7 +21,6 @@ export const getTenant = async (id: string) => {
 // posting a tenant
 export async function addTenant(data: any) {
     try {
-        debugger;
         const url = `${API_CONFIG.BASE_URL}api/Restaurant`;
         const requestOptions = {
             method: 'POST',

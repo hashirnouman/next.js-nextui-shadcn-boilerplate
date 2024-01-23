@@ -82,7 +82,6 @@ const ViewOrders = () => {
     setPage(1);
   };
   const handleSort = (columnName: string) => {
-    debugger;
     const newSortOrder =
       columnName === sortBy && sortOrder === 'asc' ? 'desc' : 'asc';
 

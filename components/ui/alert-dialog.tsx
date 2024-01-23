@@ -3,13 +3,18 @@ import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
-
+type AlertDialogActionProps = React.ComponentProps<
+  typeof AlertDialogPrimitive.Action
+> & {
+  isLoading?: boolean;
+};
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
@@ -47,13 +52,7 @@ const AlertDialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      'flex flex-col space-y-2',
-      className
-    )}
-    {...props}
-  />
+  <div className={cn('flex flex-col space-y-2', className)} {...props} />
 );
 AlertDialogHeader.displayName = 'AlertDialogHeader';
 
@@ -97,15 +96,22 @@ AlertDialogDescription.displayName =
   AlertDialogPrimitive.Description.displayName;
 
 const AlertDialogAction = React.forwardRef<
-  React.ElementRef<typeof AlertDialogPrimitive.Action>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
->(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Action
-    ref={ref}
-    className={cn(buttonVariants(), className)}
-    {...props}
-  />
-));
+  HTMLButtonElement,
+  AlertDialogActionProps
+>(({ className, isLoading, ...props }, ref) => {
+  const ActionComponent = AlertDialogPrimitive.Action;
+
+  return (
+    <ActionComponent
+      ref={ref}
+      className={cn(buttonVariants(), className)}
+      {...props}
+    >
+      {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+      {props.children}
+    </ActionComponent>
+  );
+});
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName;
 
 const AlertDialogCancel = React.forwardRef<

@@ -19,7 +19,8 @@ interface ConfirmationDialogProps {
   onCancel: () => void;
   isOpen: boolean;
   title : string;
-  description : string
+  description : string;
+  isLoading : boolean;
 }
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
@@ -27,7 +28,8 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onCancel,
   isOpen,
   title,
-  description
+  description,
+  isLoading
 }) => {
   const router = useRouter();
   const { locale } = router;
@@ -46,7 +48,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>{t.cancel}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirmed}>{t.continue}</AlertDialogAction>
+          <AlertDialogAction isLoading={isLoading} disabled={isLoading} onClick={onConfirmed}>{t.continue}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -118,7 +118,6 @@ const Teants = () => {
             isActive: isActive,
         };
     }
-    debugger;
     try {
       const result = await addTenant(data);
       if (result.color === 'success') {

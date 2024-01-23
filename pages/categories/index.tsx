@@ -9,18 +9,10 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import NavBar from '@/components/header/NavBar';
 import { Category } from '@/types/types';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addCategory,
   deleteCategory,
@@ -31,8 +23,9 @@ import { useToast } from '@/components/ui/use-toast';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
 import { useRouter } from 'next/router';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import ConfirmationDialog from '@/components/alerts/ConfirmationDialog';
+import { PaginationSection } from '@/components/PaginationSection';
 
 const Categories = () => {
   const router = useRouter();
@@ -52,10 +45,79 @@ const Categories = () => {
   const [sortOrder, setSortOrder] = useState<string>('asc');
   const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<string>('');
+  const [isModalOpen, setModalOpen] = useState(false);
 
   const { toast } = useToast();
 
-  const { data: categoryData, refetch } = useQuery({
+  const queryClient = useQueryClient();
+  const { mutate: addOrEditRecord, isPending } = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      if (id !== '') {
+        formData.append('Id', id);
+      }
+      formData.append('Name', name);
+      formData.append('LocalizedName', localizedName);
+      formData.append('Description', description);
+      if (image) {
+        formData.append('Image', image);
+      }
+      const result = await addCategory(formData);
+      return result;
+    },
+    onError: (error) => {
+      console.log('Error', error.message);
+    },
+    onSuccess: (data) => {
+      clear();
+      setModalOpen(false);
+      toast({
+        title: data.management,
+        description: data.msg,
+      });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+
+  const { mutate: deleteRecord, isPending: deletePending } = useMutation({
+    mutationFn: async () => {
+      if (recordToDelete) {
+        const result = await deleteCategory(recordToDelete);
+        return result;
+      }
+    },
+    onError: (error, variable, context) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+      });
+    },
+    onSuccess: (data, variable, context) => {
+      setRecordToDelete('');
+      setDeleteConfirmationOpen(false);
+      toast({
+        title: data.management,
+        description: data.msg,
+      });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+  const { mutate: handleEdit, isPending: editPending } = useMutation({
+    mutationFn: async (id: string) => {
+      return await getCategory(id);
+    },
+    onError: (error) => {
+      console.log('Error', error.message);
+    },
+    onSuccess: (data) => {
+      setName(data.name);
+      setDescription(data.description);
+      setLocalizedName(data.localizedName);
+      setId(data.id);
+      setModalOpen(true);
+    },
+  });
+  const { data: categoryData, isLoading } = useQuery({
     queryKey: [
       'categories',
       page,
@@ -75,7 +137,6 @@ const Categories = () => {
         sortOrder
       ),
   });
-  console.log(categoryData);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -84,15 +145,9 @@ const Categories = () => {
   };
   const clear = () => {
     setName('');
+    setLocalizedName('');
     setDescription('');
     setImage(null);
-  };
-  const handlePageChange = (page: number) => {
-    setPage(page);
-  };
-  const handleRowsPerPage = (rowsPerPage: number) => {
-    setRowsPerPage(rowsPerPage);
-    setPage(1);
   };
   const onSearchChange = (value?: string, columnName?: string) => {
     switch (columnName) {
@@ -108,7 +163,6 @@ const Categories = () => {
     setPage(1);
   };
   const handleSort = (columnName: string) => {
-    debugger;
     const newSortOrder =
       columnName === sortBy && sortOrder === 'asc' ? 'desc' : 'asc';
 
@@ -116,103 +170,65 @@ const Categories = () => {
     setSortOrder(newSortOrder);
     setPage(1);
   };
-  const [isModalOpen, setModalOpen] = useState(false);
 
-  const openModal = () => {
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const formData = new FormData();
-    if (id !== '') {
-      formData.append('Id', id);
-    }
-    formData.append('Name', name);
-    formData.append('LocalizedName', localizedName);
-    formData.append('Description', description);
-    if (image) {
-      formData.append('Image', image);
-    }
-
-    try {
-      const result = await addCategory(formData);
-      if (result.color === 'success') {
-        refetch();
-        clear();
-        closeModal();
-        toast({
-          title: result.management,
-          description: result.msg,
-        });
-      } else {
-        console.error(result.error);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleEdit = async (id: string) => {
-    try {
-      const userData = await getCategory(id);
-      if (Object.keys(userData).length !== 0) {
-        setName(userData.name);
-        setDescription(userData.description);
-        setLocalizedName(userData.localizedName);
-        setId(id);
-        openModal();
-      } else {
-        console.error(`User with ID ${id} not found.`);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // const handleDelete = async (id: string) => {
-  //   if (window.confirm('Are you sure to delete this record?')) {
-  //     const result = await deleteCategory(id);
-  //     if (result.color === 'success') {
-  //       refetch();
-  //       toast({
-  //         title: result.management,
-  //         description: result.msg,
-  //       });
-  //     } else {
-  //       console.error(result.error);
-  //     }
-  //   }
-  // };
   const handleDelete = (id: string) => {
     setRecordToDelete(id);
     setDeleteConfirmationOpen(true);
   };
-
-  const handleDeleteConfirmation = async () => {
-    if (recordToDelete) {
-      const result = await deleteCategory(recordToDelete);
-      if (result.color === 'success') {
-        refetch();
-        toast({
-          title: result.management,
-          description: result.msg,
-        });
-      } else {
-        console.error(result.error);
-      }
-    }
+  const handleCancelDelete = () => {
     setRecordToDelete('');
     setDeleteConfirmationOpen(false);
   };
 
-  const handleCancelDelete = () => {
-    setRecordToDelete('');
-    setDeleteConfirmationOpen(false);
+  const renderTableBody = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={3}>
+            <div className='flex justify-center'>
+              <Loader2 className='mr-2 h-10 w-10 animate-spin' />
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!categoryData || categoryData.totalRecords === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={3} className='text-center'>
+            No data found !
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    // Render table rows when data is available
+    return categoryData?.clientPreferences?.map((item: Category) => (
+      <TableRow key={item.id}>
+        <TableCell>
+          {locale === 'ar' ? item.localizedName : item.name}
+        </TableCell>
+        <TableCell>{item.description}</TableCell>
+        <TableCell className='gap-2'>
+          {/* Edit button */}
+          <Button
+            onClick={() => handleEdit(item.id.toString())}
+            variant='secondary'
+            disabled={editPending}
+          >
+            {t.edit}
+          </Button>
+          <Button
+            onClick={() => handleDelete(item.id.toString())}
+            variant='destructive'
+            className='ml-6'
+          >
+            {t.delete}
+          </Button>
+        </TableCell>
+      </TableRow>
+    ));
   };
   return (
     <>
@@ -227,22 +243,27 @@ const Categories = () => {
               onChange={(e) => onSearchChange(e.target.value)}
             /> */}
             <div className='flex gap-3'>
-              <Button onClick={openModal} color='primary'>
+              <Button onClick={() => setModalOpen(true)} color='primary'>
                 {t.addNew}
               </Button>
             </div>
           </div>
           <div className='flex items-center justify-between'>
             <span className='text-default-400 text-small'>
-              {t.total + ' ' + categoryData?.totalRecords + ' ' + t.records}
+              {t.total +
+                ' ' +
+                (categoryData?.totalRecords ?? 0) +
+                ' ' +
+                t.records}
             </span>
             <label className='text-default-400 text-small flex items-center'>
               {t.recordsPerPage}
               <select
                 className='text-default-400 text-small bg-transparent outline-none'
-                onChange={(e) =>
-                  handleRowsPerPage(parseInt(e.target.value, 10))
-                }
+                onChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(1);
+                }}
               >
                 <option value='5'>5</option>
                 <option value='10'>10</option>
@@ -310,64 +331,21 @@ const Categories = () => {
                 <TableHead>{t.action}</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {categoryData?.clientPreferences?.map((item: Category) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    {locale === 'ar' ? item.localizedName : item.name}
-                  </TableCell>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell className='gap-2'>
-                    {/* Edit button */}
-                    <Button
-                      onClick={() => handleEdit(item.id.toString())}
-                      variant='secondary'
-                    >
-                      {t.edit}
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(item.id.toString())}
-                      variant='destructive'
-                      className='ml-6'
-                    >
-                      {t.delete}
-                    </Button>
+            <TableBody>{renderTableBody()}</TableBody>
+            {categoryData?.totalRecords > 0 && (
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={3}>
+                    <PaginationSection
+                      totalPosts={categoryData?.totalRecords}
+                      postsPerPage={rowsPerPage}
+                      currentPage={page}
+                      setCurrentPage={setPage}
+                    />
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={3}>
-                  <Pagination>
-                    <PaginationPrevious
-                      onClick={() => setPage(page - 1)}
-                      isActive={page !== 1}
-                    >
-                      {t.previous}
-                    </PaginationPrevious>
-                    <PaginationContent>
-                      {[...Array(categoryData?.totalPages)].map((_, index) => (
-                        <PaginationItem key={index}>
-                          <PaginationLink
-                            onClick={() => handlePageChange(index + 1)}
-                            isActive={page === index + 1}
-                          >
-                            {index + 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ))}
-                    </PaginationContent>
-                    <PaginationNext
-                      onClick={() => handlePageChange(page + 1)}
-                      isActive={page !== categoryData?.totalPages}
-                    >
-                      {t.next}
-                    </PaginationNext>
-                  </Pagination>
-                </TableCell>
-              </TableRow>
-            </TableFooter>
+              </TableFooter>
+            )}
           </Table>
           {/* Add Or Update Modal */}
           {isModalOpen && (
@@ -381,7 +359,7 @@ const Categories = () => {
                     <button
                       type='button'
                       className='end-2.5 ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white'
-                      onClick={closeModal}
+                      onClick={() => {setModalOpen(false); clear();}}
                     >
                       <svg
                         className='h-3 w-3'
@@ -402,7 +380,14 @@ const Categories = () => {
                     </button>
                   </div>
                   <div className='p-4 md:p-5'>
-                    <form className='space-y-4' onSubmit={handleSubmit}>
+                    <form
+                      className='space-y-4'
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        addOrEditRecord();
+                      }}
+                    >
+                      {' '}
                       <label className='mb-2 block text-sm font-medium text-secondary-foreground'>
                         Name
                       </label>
@@ -446,9 +431,10 @@ const Categories = () => {
                         className='text-secondary-foreground'
                         onChange={handleImageChange}
                       />
-
                       <Button
                         type='submit'
+                        isLoading={isPending}
+                        disabled={isPending}
                         className='w-full rounded-lg bg-blue-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800'
                       >
                         Submit
@@ -461,11 +447,12 @@ const Categories = () => {
           )}
           {/* Confirmation Dialog */}
           <ConfirmationDialog
-            onConfirmed={handleDeleteConfirmation}
+            onConfirmed={deleteRecord}
             onCancel={handleCancelDelete}
             isOpen={isDeleteConfirmationOpen}
             title={t.confirmationTitle}
             description={t.confirmationDelete}
+            isLoading={deletePending}
           />
         </div>
       </section>
