@@ -28,3 +28,10 @@ export type Item = {
   price: number;
   subCategoryName: string;
 };
+export type ClientPreference = {
+  id: number;
+  name: string;
+  theme : string;
+  language: string;
+  logo: string;
+};

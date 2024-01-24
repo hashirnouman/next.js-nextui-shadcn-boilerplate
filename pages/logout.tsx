@@ -11,6 +11,7 @@ export const getServerSideProps = async (
   nookies.set(context, 'token', '', cookieOptions);
   nookies.set(context, 'username', '', cookieOptions);
   nookies.set(context, 'rememberMe', '', cookieOptions);
+  nookies.set(context, 'clientPreference', '', cookieOptions);
 
   // Redirect to login page
   return {

@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import nookies, { parseCookies, destroyCookie } from 'nookies';
 import { API_CONFIG } from '@/constants/api-config';
 import Image from 'next/image';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ClientPreference } from '@/types/types';
 
 const Login = () => {
   const router = useRouter();
@@ -14,15 +16,13 @@ const Login = () => {
   const [passwordError, setPasswordError] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-
-    let obj = {
-      email: userInfo.email,
-      password: userInfo.password,
-    };
-
-    try {
+  const queryClient = useQueryClient();
+  const { mutate: handleSubmit, isPending } = useMutation({
+    mutationFn: async () => {
+      let obj = {
+        email: userInfo.email,
+        password: userInfo.password,
+      };
       const fetchResponse = await fetch(
         `${API_CONFIG.BASE_URL}api/Auth/Authenticate`,
         {
@@ -32,32 +32,63 @@ const Login = () => {
         }
       );
       const resp = await fetchResponse.json();
-      console.log(resp);
-      if (!fetchResponse.ok) {
-        if (resp.errors) {
-          setEmailError(resp.errors.Email);
-          setPasswordError(resp.errors.Password);
-        } else {
-          setEmailError('');
-          setPasswordError('');
-        }
-        setError(resp.response);
-        throw new Error(`Request failed with status: ${fetchResponse.status}`);
+      return resp;
+    },
+    onError: (error) => {
+      console.log('Error', error.message);
+    },
+    onSuccess: (data) => {
+      if(!data.errors){
+        setUserCookies(data.response.token, userInfo.email || '', false, data.response.clientPreferences);
+        window.location.href = '/';
       }
-      const json = Jwt.decode(resp.response) as { [key: string]: string };
-      setUserCookies(resp.response, userInfo.email || '', false);
-      router.push('/');
-    } catch (error) {
-      console.error('Fetch error:', error);
-    }
-  };
+    },
+  });
+  // const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
+  //   e.preventDefault();
+
+  //   let obj = {
+  //     email: userInfo.email,
+  //     password: userInfo.password,
+  //   };
+
+  //   try {
+  //     const fetchResponse = await fetch(
+  //       `${API_CONFIG.BASE_URL}api/Auth/Authenticate`,
+  //       {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify(obj),
+  //       }
+  //     );
+  //     const resp = await fetchResponse.json();
+  //     console.log(resp);
+  //     if (!fetchResponse.ok) {
+  //       if (resp.errors) {
+  //         setEmailError(resp.errors.Email);
+  //         setPasswordError(resp.errors.Password);
+  //       } else {
+  //         setEmailError('');
+  //         setPasswordError('');
+  //       }
+  //       setError(resp.response);
+  //       throw new Error(`Request failed with status: ${fetchResponse.status}`);
+  //     }
+  //     const json = Jwt.decode(resp.response) as { [key: string]: string };
+  //     setUserCookies(resp.response, userInfo.email || '', false);
+  //     router.push('/');
+  //   } catch (error) {
+  //     console.error('Fetch error:', error);
+  //   }
+  // };
   function setUserCookies(
     //twoFAEnabled: boolean,
     token: string,
     //guid: string,
     username: string,
     //onboarding: string,
-    rememberMe: boolean = true
+    rememberMe: boolean = true,
+    clientPreference : ClientPreference
   ) {
     // Set the cookie with an explicit expiration time (e.g., 30 days)
     const expirationDate = new Date();
@@ -84,6 +115,9 @@ const Login = () => {
     nookies.set(undefined, 'username', username, expiration);
     //nookies.set(undefined, "onboarding", onboarding, expiration);
     nookies.set(undefined, 'rememberMe', rememberMe + '', expiration);
+    const clientPreferenceString = JSON.stringify(clientPreference);
+
+    nookies.set(undefined, 'clientPreference', clientPreferenceString, expiration);
   }
   return (
     <div className='flex min-h-screen items-center justify-center bg-[#f5f6f9]'>
@@ -108,7 +142,12 @@ const Login = () => {
               <span className='font-medium'>Error!</span> {error}
             </div>
           )}
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+          >
             <div className='mb-6'>
               <Input
                 autoFocus
@@ -136,7 +175,7 @@ const Login = () => {
               </div> */}
             </div>
             <div className='grid'>
-              <Button variant='secondary' type='submit'>
+              <Button variant='secondary' isLoading={isPending} disabled={isPending} type='submit'>
                 Login
               </Button>
             </div>

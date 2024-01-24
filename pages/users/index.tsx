@@ -52,7 +52,6 @@ const tenantId = jsonToken ? jsonToken['tenantId'] || "" : "";
     queryKey: ['tenants', page, rowsPerPage, nameSearch],
     queryFn: () => getUsers(page, rowsPerPage, nameSearch),
   });
-  console.log(usersData);
   const clear = () => {
     setId('');
     setUserName('');

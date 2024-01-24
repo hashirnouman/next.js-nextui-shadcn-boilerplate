@@ -48,7 +48,7 @@ export function PaginationSection({
       const renderedPages = activePages.map((page, idx) => (
         <PaginationItem
           key={idx}
-          className={currentPage === page ? 'rounded-md bg-neutral-100' : ''}
+          className={currentPage === page ? 'rounded-md bg-primary' : ''}
         >
           <PaginationLink onClick={() => setCurrentPage(page)}>
             {page}

@@ -2,7 +2,6 @@ import { API_CONFIG } from '@/constants/api-config';
 
 // all tenants
 export const getTenants = async (page: number, rowsPerPage: number, nameSearch : String) => {
-    console.log('api called');
     const response = await fetch(`${API_CONFIG.BASE_URL}api/Restaurant?page=${page}&pageSize=${rowsPerPage}&search=${nameSearch}`);
     const json = await response.json();
 

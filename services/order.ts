@@ -8,7 +8,6 @@ export const getOrders = async (
   sortBy: string,
   sortOrder: string
 ) => {
-  console.log('api called');
   const url = `${API_CONFIG.BASE_URL}api/Order/GetOrders`;
   const data = {
     page: page,

@@ -9,7 +9,6 @@ export const getCategories = async (
   sortBy: string,
   sortOrder: string
 ) => {
-  console.log('api called');
   const url = `${API_CONFIG.BASE_URL}api/Category/GetCategories`;
   const data = {
     page: page,

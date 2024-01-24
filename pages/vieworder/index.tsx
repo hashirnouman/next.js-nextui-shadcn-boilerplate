@@ -63,7 +63,6 @@ const ViewOrders = () => {
         sortOrder
       ),
   });
-  console.log(orderData);
   const handlePageChange = (page: number) => {
     setPage(page);
   };

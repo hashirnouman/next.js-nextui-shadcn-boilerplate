@@ -1,5 +1,4 @@
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
-import Image from 'next/image';
 //import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { parseCookies } from 'nookies';
@@ -9,6 +8,9 @@ import ar from '@/locales/ar';
 import { LangDropDown, themes } from '@/constants/constants';
 import { API_CONFIG } from '@/constants/api-config';
 import { Context } from '@/contexts/UseContext';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '../ui/select';
+import { ClientPreference } from '@/types/types';
+import Link from 'next/link';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -27,28 +29,13 @@ const NavBar: React.FC = () => {
   const { locale } = router;
   const t = locale === 'en' ? en : ar;
 
-  const { setDirection, setTheme } = Context();
-
-  const changeLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
-    const selectedLocale = e.target.value;
-    router.push(router.pathname, router.asPath, { locale: selectedLocale });
-    if (selectedLocale == 'ar') {
-      setDirection('rtl');
-    } else {
-      setDirection('ltr');
-    }
-  };
-  const changeTheme = (e: ChangeEvent<HTMLSelectElement>) => {
-    setTheme(e.target.value);
-    setDataTheme(e.target.value);
-  };
+  const { changeLanguage, changeTheme, theme } = Context();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isUserProfileOpen, setUserProfileOpen] = useState(false);
   const [openDropdownMenu, setOpenDropdownMenu] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [logo, setLogo] = useState('');
   const [email, setEmail] = useState('');
-  const [dataTheme, setDataTheme] = useState('');
 
   const handleToggleUserMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -78,26 +65,16 @@ const NavBar: React.FC = () => {
         `${API_CONFIG.BASE_URL}api/Permission/GetMenuItems?userEmail=${userEmail}`
       )
       .then((response) => {
-        console.log(response);
         setMenuItems(response.data);
       })
       .catch((error) => {
         console.error(error);
       });
   };
-  const getLogo = (userEmail: string) => {
-    axios
-      .get(
-        `${API_CONFIG.BASE_URL}api/Restaurant/GetRestaurantLogo?userEmail=${userEmail}`
-      )
-      .then((response) => {
-        console.log('get logo');
-        console.log(response);
-        setLogo(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+  const getLogo = () => {
+    const clientPreferenceString = cookies.clientPreference || '{}';
+    const clientPreference: ClientPreference = JSON.parse(clientPreferenceString);
+    setLogo(clientPreference.logo);
   };
   const nestedMenuItems = buildMenuTree(menuItems);
 
@@ -119,11 +96,9 @@ const NavBar: React.FC = () => {
   const cookies = parseCookies();
 
   useEffect(() => {
-    var dataTheme = document.documentElement.getAttribute('data-theme') || '';
-    setDataTheme(dataTheme);
     const userEmail = cookies.username;
     getData(userEmail);
-    getLogo(userEmail);
+    getLogo();
     setEmail(userEmail);
     document.addEventListener('click', handleDocumentClick);
     return () => {
@@ -135,7 +110,7 @@ const NavBar: React.FC = () => {
   ) => {
     // This function is called when the logo image encounters an error.
     // You can set a default image here.
-    event.currentTarget.src = 'vercel.svg'; // Display vercel.svg on error
+    event.currentTarget.src = 'defaultLogo.png'; // Display vercel.svg on error
   };
   return (
     <div className='w-full bg-gray-800'>
@@ -161,7 +136,7 @@ const NavBar: React.FC = () => {
             </button>
           </div>
           <div className='flex flex-shrink-0 items-center'>
-            <Image
+            <img
               className='hidden h-8 w-auto md:block lg:block'
               src={logo}
               alt='Logo'
@@ -189,13 +164,13 @@ const NavBar: React.FC = () => {
                     {openDropdownMenu === menuItem.name && (
                       <div className='absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
                         {menuItem.subItems.map((subItem) => (
-                          <a
+                          <Link
                             key={subItem.name}
                             href={subItem.href}
                             className='block px-4 py-2 text-sm text-gray-700'
                           >
                             {subItem.name}
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     )}
@@ -213,30 +188,37 @@ const NavBar: React.FC = () => {
               </div>
             ))}
           </div>
-          <div className='relative ml-3'>
-            <select
-              onChange={changeLanguage}
+          <div className='flex flex-row gap-2 relative ml-3'>
+            <Select
               value={locale}
-              className='text-shadow-sm bg-transparent text-lg tracking-wide text-white'
+              onValueChange={(newValue) => changeLanguage(newValue)}
             >
-              {LangDropDown.map((op) => (
-                <option value={op.value} key={op.id}>
-                  {op.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              onChange={changeTheme}
-              value={dataTheme}
-              className='text-shadow-sm bg-transparent text-lg tracking-wide text-white'
+              <SelectTrigger>
+                {LangDropDown.find((op) => op.value === locale)?.label}
+              </SelectTrigger>
+              <SelectContent>
+                {LangDropDown.map((op) => (
+                  <SelectItem value={op.value} key={op.value}>
+                    {op.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={theme}
+              onValueChange={(newValue) => {
+                changeTheme(newValue);
+              }}
             >
-              {themes.map((op) => (
-                <option value={op.value} key={op.value}>
-                  {op.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>{theme}</SelectTrigger>
+              <SelectContent>
+                {themes.map((op) => (
+                  <SelectItem value={op.value} key={op.value}>
+                    {op.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className='sm:ml-6 sm:flex sm:items-center'>
             {/* Profile dropdown */}
@@ -287,41 +269,6 @@ const NavBar: React.FC = () => {
                 )}
               </div>
             </div>
-            {isUserProfileOpen && (
-              <div className='absolute right-0 z-10 mt-48 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
-                <div
-                  className='text-md block px-4 py-2 font-bold text-gray-700'
-                  role='menuitem'
-                  id='user-menu-item-0'
-                >
-                  {email}
-                </div>
-                <a
-                  href='/'
-                  className='block px-4 py-2 text-sm text-gray-700'
-                  role='menuitem'
-                  id='user-menu-item-0'
-                >
-                  Your Profile
-                </a>
-                <a
-                  href='#'
-                  className='block px-4 py-2 text-sm text-gray-700'
-                  role='menuitem'
-                  id='user-menu-item-1'
-                >
-                  Settings
-                </a>
-                <a
-                  href='/logout'
-                  className='block px-4 py-2 text-sm text-gray-700'
-                  role='menuitem'
-                  id='user-menu-item-2'
-                >
-                  Sign out
-                </a>
-              </div>
-            )}
           </div>
         </div>
       </div>

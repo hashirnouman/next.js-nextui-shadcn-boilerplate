@@ -46,7 +46,6 @@ const Teants = () => {
     queryKey: ['tenants', page, rowsPerPage, nameSearch],
     queryFn: () => getTenants(page, rowsPerPage, nameSearch),
   });
-  console.log(tenantData);
   const clear = () => {
     setId('');
     setName('');

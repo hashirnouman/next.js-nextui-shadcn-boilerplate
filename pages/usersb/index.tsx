@@ -17,7 +17,6 @@ export default function Home() {
     fetch('https://jsonplaceholder.typicode.com/comments').then((res)=> res.json()),
     select:(users)=> users.map((user : any)=> ({id : user.id, name:user.name})),
   });
-  console.log(usersData);
   if(isLoading){
     return(
       <main className='mt-4 flex min-h-screen flex-col items-center'>

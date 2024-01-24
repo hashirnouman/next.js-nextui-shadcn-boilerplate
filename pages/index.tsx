@@ -22,6 +22,7 @@ import { useRouter } from 'next/router';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
 import NavBar from '@/components/header/NavBar';
+import { ClientPreference } from '@/types/types';
 const inter = Inter({ subsets: ['latin'] });
 
 const themes = [
@@ -40,7 +41,7 @@ export default function Home() {
   const changeTheme = (theme: string) => {
     document.querySelector('html')?.setAttribute('data-theme', theme);
   };
-
+  
   return (
     <>
       <NavBar />
