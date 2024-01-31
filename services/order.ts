@@ -29,3 +29,12 @@ export const getOrders = async (
 
   return json;
 };
+
+export const getCouponByCode = async (couponCode: string) => {
+  debugger;
+  const response = await fetch(
+    `${API_CONFIG.BASE_URL}api/Coupon/GetCouponByCode?couponCode=${couponCode}`
+  );
+
+  return response;
+};

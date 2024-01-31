@@ -9,7 +9,7 @@ export type Roles = {
 export type Category = {
   id: number;
   name: string;
-  localizedName : string;
+  localizedName: string;
   description: string;
   pic: string;
 };
@@ -27,11 +27,45 @@ export type Item = {
   name: string;
   price: number;
   subCategoryName: string;
+  pic: string;
 };
 export type ClientPreference = {
   id: number;
   name: string;
-  theme : string;
+  theme: string;
   language: string;
   logo: string;
+};
+export type OrderItem = {
+  itemId: number;
+  itemName: string;
+  price: number;
+  quantity: number;
+  subCategoryName: string;
+};
+export type OrderData = {
+  tableNumber: string;
+  status: string;
+  paymentType: string;
+  customer?: Customer;
+  items: OrderItem[];
+  discount: number;
+};
+export type Customer = {
+  id: number;
+  name: string;
+  phone: string;
+  address: string;
+  accountType: string;
+};
+export type Coupon = {
+  id: string;
+  couponValue: string;
+  type: string;
+  couponFor: string;
+  appliesTo: string;
+  categories: string;
+  codeLimit: number;
+  perCustomerLimit: number;
+  minimumOrderAmount: number;
 };
