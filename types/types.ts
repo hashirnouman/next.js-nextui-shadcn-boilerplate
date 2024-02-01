@@ -16,6 +16,7 @@ export type Category = {
 export type SubCategory = {
   id: number;
   name: string;
+  localizedName: string;
   pic: string;
 };
 export type OrderDetails = {
@@ -25,6 +26,7 @@ export type OrderDetails = {
 export type Item = {
   id: number;
   name: string;
+  localizedName: string;
   price: number;
   subCategoryName: string;
   pic: string;
@@ -50,6 +52,7 @@ export type OrderData = {
   customer?: Customer;
   items: OrderItem[];
   discount: number;
+  note: string;
 };
 export type Customer = {
   id: number;

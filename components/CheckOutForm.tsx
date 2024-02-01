@@ -2,18 +2,26 @@ import { OrderData } from '@/types/types';
 import { Input } from './ui/input';
 import { useState } from 'react';
 import { Button } from './ui/button';
+import { useRouter } from 'next/router';
+import en from '@/locales/en';
+import ar from '@/locales/ar';
 
 interface CheckOutFormProps {
   orderData: OrderData;
   onUpdateOrderData: (updatedOrderData: OrderData) => void;
-  handleSaveClick: () => void;
+  handlePrintBillClick: () => void;
+  handleDiscountClick: () => void;
 }
 
 const CheckOutForm: React.FC<CheckOutFormProps> = ({
   orderData,
   onUpdateOrderData,
-  handleSaveClick,
+  handlePrintBillClick,
+  handleDiscountClick
 }) => {
+  const router = useRouter();
+  const { locale } = router;
+  const t = locale === 'en' ? en : ar;
   const [chargedValue, setChargedValue] = useState('');
   const [paymentType, setPaymentType] = useState('');
 
@@ -38,12 +46,12 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({
     });
   };
   return (
-    <div className=' mt-2 h-[500px] w-[520px] rounded-xl bg-[#f9f9f9]'>
+    <div className=' mt-2 h-[400px] w-[520px] min-h-[400px] min-w-[520px] rounded-xl bg-[#f9f9f9]'>
       <div className='container relative mx-auto'>
-        <div className='mx-10 my-10 flex flex-row gap-16'>
-          <h1 className='mt-6 font-bold'>Total:</h1>
+        <div className='mx-10 my-2 flex flex-row gap-x-16'>
+          <h1 className='mt-2 flex-1 font-bold'>{t.total}:</h1>
           <Input
-            className='absolute right-0 mr-10 block h-14 w-56 p-2.5'
+            className='mx-10 block h-10 w-56 p-2.5'
             value={(
               orderData.items.reduce(
                 (total, item) => total + item.price * item.quantity,
@@ -53,18 +61,18 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({
             disabled
           />
         </div>
-        <div className='mx-10 my-10 flex flex-row gap-16'>
-          <h1 className='mt-6 font-bold'>Charged:</h1>
+        <div className='mx-10 my-2 flex flex-row gap-x-16'>
+          <h1 className='mt-4 font-bold'>{t.charged}:</h1>
           <Input
             onChange={(e) => setChargedValue(e.target.value)}
-            className='absolute right-0 mr-10 block h-14 w-56 p-2.5'
+            className='mx-10 block h-10 w-56 p-2.5'
             value={chargedValue}
             required
           />
         </div>
-        <div className='mx-10 my-10 flex flex-row gap-16'>
-          <h1 className='mt-6 font-bold'>Payment Type:</h1>
-          <div className='flex gap-4'>
+        <div className='mx-10 my-2 flex flex-row gap-16'>
+          <h1 className='mt-4 font-bold'>{t.paymentType}:</h1>
+          <div className='flex gap-x-4'>
             <Button
               onClick={() => handlePaymentTypeClick('Cash')}
               className={`h-12 flex-1 rounded-lg px-6 font-semibold text-white ${
@@ -73,7 +81,7 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({
                   : 'bg-gray-300 hover:bg-gray-400'
               }`}
             >
-              Cash
+              {t.cash}
             </Button>
             <Button
               onClick={() => handlePaymentTypeClick('Credit')}
@@ -83,12 +91,12 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({
                   : 'bg-gray-300 hover:bg-gray-400'
               }`}
             >
-              Credit
+              {t.credit}
             </Button>
           </div>
         </div>
       </div>
-      <div className='container mt-20 flex items-center justify-center'>
+      <div className='container mt-2 flex items-center justify-center'>
         <div className='relative flex w-[56.5%] items-center'>
           <Input
             type='search'
@@ -102,6 +110,7 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({
 
       <div className='container mx-auto mt-1'>
         <div className='mx-2 flex max-w-[500px] flex-wrap justify-center'>
+        <div dir='ltr' className='flex max-w-[500px] flex-wrap justify-center'>
           <button
             type='button'
             onClick={() => handleDigitButtonClick('10')}
@@ -238,24 +247,26 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({
           >
             bal
           </button>
+          </div>
           <button
+          onClick={handleDiscountClick}
             type='button'
-            className=' mb-2 me-2 h-8 w-32 rounded-lg border border-gray-200 bg-[#019706] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
+            className=' mb-1 me-2 h-8 w-32 rounded-lg border border-gray-200 bg-[#019706] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
           >
-            Discount%
+            {t.discount}%
           </button>
           <button
             type='button'
-            className=' mb-2 me-2 h-8 w-32 rounded-lg border border-gray-200 bg-[#ffb534] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
+            className=' mb-1 me-2 h-8 w-32 rounded-lg border border-gray-200 bg-[#ffb534] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
           >
-            Round
+            {t.round}
           </button>
           <button
             type='button'
-            onClick={handleSaveClick}
-            className=' mb-2 me-2 h-8 w-32 rounded-lg border border-gray-200 bg-[#ff4155] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
+            onClick={handlePrintBillClick}
+            className=' mb-1 me-2 h-8 w-32 rounded-lg border border-gray-200 bg-[#ff4155] px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
           >
-            Save Order
+            {t.printBill}
           </button>
         </div>
       </div>

@@ -80,7 +80,7 @@ const Receipt: React.ForwardRefRenderFunction<any, ReceiptProps> = (
             <img
               src={logo}
               alt='Image'
-              className=' h-20 w-20 max-w-full rounded-full'
+              className='h-20 w-20 max-w-full rounded-full'
             />
           </div>
           <div>

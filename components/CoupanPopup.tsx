@@ -7,6 +7,7 @@ interface CustomerPopupProps {
   customerData: Customer[];
   handleApplyCoupon: (couponCode: string) => void;
   setIsCouponPopupOpen: (isOpen: boolean) => void;
+  setCouponError : (couponError : string) => void;
   couponError: string;
 }
 
@@ -14,6 +15,7 @@ const CouponPopup: React.FC<CustomerPopupProps> = ({
   customerData,
   handleApplyCoupon,
   setIsCouponPopupOpen,
+  setCouponError,
   couponError,
 }) => {
   const [couponCode, setCouponCode] = useState('');
@@ -47,7 +49,7 @@ const CouponPopup: React.FC<CustomerPopupProps> = ({
               <h1 className=' font-bold'>Enter Coupon Value</h1>
               <button
                 type='button'
-                onClick={() => setIsCouponPopupOpen(false)}
+                onClick={() => {setIsCouponPopupOpen(false); setCouponError('');}}
                 className='ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-black hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white'
                 data-modal-hide='default-modal'
               >
@@ -95,7 +97,7 @@ const CouponPopup: React.FC<CustomerPopupProps> = ({
                   <Button variant='default' onClick={handleBackspaceClick}>
                     Backspace
                   </Button>
-                  <Button variant='destructive' onClick={() => setIsCouponPopupOpen(false)}>
+                  <Button variant='destructive' onClick={() => {setIsCouponPopupOpen(false); setCouponError('');}}>
                     Cancel
                   </Button>
                   <Button

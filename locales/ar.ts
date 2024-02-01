@@ -1,3 +1,5 @@
+import Categories from "@/pages/categories";
+
 export default {
   welcome: 'خوش آمدید',
   addNew : "نیا اندراج",
@@ -17,5 +19,29 @@ export default {
   cancel : "کینسل",
   continue : "جاری رکھیں",
   confirmationTitle : "کنفرمیشن",
-  confirmationDelete : "کیا آپ یہ ریکارڈ ڈیلیٹ کرنا چاہتے ہیں ؟"
+  confirmationDelete : "کیا آپ یہ ریکارڈ ڈیلیٹ کرنا چاہتے ہیں ؟",
+  mainMenu : "مین مینیو",
+  categories : "کیٹگریز",
+  subCategories : "سب کیٹگریز",
+  changeTable : "چینج ٹیبل",
+  selectCustomer : "سیلکٹ کسٹمرز",
+  ticketNote : "ٹکٹ نوٹ",
+  printBill : "پرنٹ بل",
+  addTicket : "ایڈ ٹکٹ",
+  table : "ٹیبل",
+  status : "سٹیٹس",
+  note : "نوٹ",
+  settle : "سیٹل",
+  close : "کلوز",
+  charged : "چارجڈ",
+  paymentType : "پیمنٹ ٹائپ",
+  credit : "کریڈٹ",
+  cash : "کیش",
+  round : "راؤنڈ",
+  discount : "ڈسکاؤنٹ",
+  add : "ایڈ",
+  pending: "پینڈنگ",
+  delivered: "ڈیلورڈ",
+  locked: "لاکڈ",
+  due: "ڈیو",
 };

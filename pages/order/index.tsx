@@ -16,7 +16,6 @@ import {
   SubCategory,
 } from '@/types/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { API_CONFIG } from '@/constants/api-config';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
@@ -26,14 +25,21 @@ import CustomerPopup from '@/components/CustomerPopup';
 import { useReactToPrint } from 'react-to-print';
 import Receipt from '@/components/Receipt';
 import CouponPopup from '@/components/CoupanPopup';
-import {
-  getCouponByCode,
-} from '@/services/order';
+import { getCouponByCode } from '@/services/order';
+import TicketNote from '@/components/TicketNote';
+import OrderItemSection from '@/components/OrderItemsSection';
+import Cart from '@/components/Cart';
+import en from '@/locales/en';
+import ar from '@/locales/ar';
+import SelectTable from '@/components/SelectTable';
+import Pos from '@/components/Pos';
 const Order = () => {
+  const router = useRouter();
+  const { locale } = router;
+  const t = locale === 'en' ? en : ar;
   const printRef = useRef<any>(null);
 
   const [layout, setLayout] = useState<keyof typeof layouts.order>('default');
-  const router = useRouter();
   const layoutsList = [
     { key: 'default', value: 'default' },
     { key: 'epos', value: 'epos' },
@@ -50,20 +56,16 @@ const Order = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
-  const [selectedSubcategory, setSelectedSubcategory] =
-    useState<SubCategory | null>(null);
   const [tabIndex, setTabIndex] = useState(0);
   const [orderData, setOrderData] = useState<OrderData>({
-    tableNumber: 'A1',
+    tableNumber: '',
     status: 'New',
     paymentType: '',
     items: [],
     discount: 0,
+    note: '',
   });
-  const [checkOutOpen, setCheckOutOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
+  const [middleComponent, setMiddleComponent] = useState('');
   const [isCustomerPopupOpen, setIsCustomerPopupOpen] = useState(false);
   const [isCouponPopupOpen, setIsCouponPopupOpen] = useState(false);
   const [customerData, setCustomerData] = useState<Customer[]>([]);
@@ -117,29 +119,17 @@ const Order = () => {
   useEffect(() => {
     getCategoryData();
   }, []);
-  // const handleCategoryClick = (categoryId: number) => {
-  //   getSubCategoryData(categoryId);
-  // };
-  // const handleSubCategoryClick = (subCategoryId: number) => {
-  //   getItemData(subCategoryId);
-  //   setIsModalOpen(true);
-  // };
   const handleCategoryClick = (categoryId: number) => {
     getSubCategoryData(categoryId);
     setSelectedCategory(
       categoryData.find((category) => category.id === categoryId) || null
     );
-    setSelectedSubcategory(null);
     setTabIndex(1);
     setItemData([]);
   };
 
   const handleSubCategoryClick = (subCategoryId: number) => {
     getItemData(subCategoryId);
-    setSelectedSubcategory(
-      subCategoryData.find((subCategory) => subCategory.id === subCategoryId) ||
-        null
-    );
     //setIsModalOpen(true);
   };
 
@@ -175,7 +165,6 @@ const Order = () => {
     setIsCustomerPopupOpen(true);
   };
   const handleAddCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
     setOrderData((prevOrderData) => {
       return {
         ...prevOrderData,
@@ -186,9 +175,8 @@ const Order = () => {
     setIsCustomerPopupOpen(false);
   };
   const handleApplyCoupon = async (couponCode: string) => {
-    debugger;
     var response = await getCouponByCode(couponCode);
-  
+
     if (!response.ok) {
       setCouponError('Coupon code is not valid.');
     } else {
@@ -198,132 +186,88 @@ const Order = () => {
       if (couponData.type === 'pound') {
         discountAmount = parseFloat(couponData.couponValue);
       } else if (couponData.type === 'percentage') {
-        discountAmount = (orderData.items.reduce((total, item) => total + item.price, 0) / 100) * parseFloat(couponData.couponValue);
+        discountAmount =
+          (orderData.items.reduce((total, item) => total + item.price, 0) /
+            100) *
+          parseFloat(couponData.couponValue);
       }
       const orderTotal = orderData.items.reduce(
         (total, item) => total + item.price * item.quantity,
         0
-      )
-      if(orderTotal >= couponData.minimumOrderAmount){
+      );
+      if (orderTotal >= couponData.minimumOrderAmount) {
         setOrderData({
           ...orderData,
           discount: discountAmount,
         });
-      }
-      else{
+      } else {
         setCouponError('Order amount is less then minimum order amount.');
       }
     }
   };
-  
+
   const handleUpdateOrderData = (updatedOrderData: OrderData) => {
     setOrderData(updatedOrderData);
   };
 
   const handleSettleClick = async () => {
-    setCheckOutOpen(true);
-    // try {
-    //   const apiRequestData = {
-    //     id: 0,
-    //     tableNumber: orderData.tableNumber,
-    //     status: orderData.status,
-    //     orderDetails: orderData.items.map((item) => ({
-    //       itemId: item.itemId,
-    //       itemName: item.itemName,
-    //       price: item.price,
-    //       quantity: item.quantity,
-    //       subCategoryName: item.subCategoryName,
-    //     })),
-    //   };
-
-    //   const response = await fetch(`${API_CONFIG.BASE_URL}api/Order`, {
-    //     method: 'POST',
-    //     headers: {
-    //       Accept: 'application/json',
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(apiRequestData),
-    //   });
-    //   var result = await response.json();
-    //   if (result.color === 'success') {
-    //     setOrderData({
-    //       tableNumber: 'A1',
-    //       status: 'New',
-    //       items: [],
-    //     });
-    //     setIsModalOpen(false);
-    //     toast({
-    //       title: result.management,
-    //       description: result.msg,
-    //     });
-    //   } else {
-    //     console.error(result.error);
-    //   }
-    // } catch (error) {
-    //   console.error('Error:', error);
-    // }
+    setMiddleComponent('checkoutform');
   };
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
   });
   const handleSaveClick = async () => {
-    // try {
-    //   const apiRequestData = {
-    //     id: 0,
-    //     tableNumber: orderData.tableNumber,
-    //     status: orderData.status,
-    //     paymentType: orderData.paymentType,
-    //     CustomerId: orderData.customer?.id,
-    //     orderDetails: orderData.items.map((item) => ({
-    //       itemId: item.itemId,
-    //       itemName: item.itemName,
-    //       price: item.price,
-    //       quantity: item.quantity,
-    //       subCategoryName: item.subCategoryName,
-    //     })),
-    //   };
-    //   const response = await fetch(`${API_CONFIG.BASE_URL}api/Order`, {
-    //     method: 'POST',
-    //     headers: {
-    //       Accept: 'application/json',
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(apiRequestData),
-    //   });
-    //   var result = await response.json();
-    //   if (result.color === 'success') {
-    //     setOrderData({
-    //       tableNumber: 'A1',
-    //       paymentType: '',
-    //       status: 'New',
-    //       items: [],
-    //     });
-    //     setIsModalOpen(false);
-    //     toast({
-    //       title: result.management,
-    //       description: result.msg,
-    //     });
-    //   } else {
-    //     console.error(result.error);
-    //   }
-    // } catch (error) {
-    //   console.error('Error:', error);
-    // }
+    try {
+      const apiRequestData = {
+        id: 0,
+        tableNumber: orderData.tableNumber,
+        status: orderData.status,
+        paymentType: orderData.paymentType,
+        CustomerId: orderData.customer?.id,
+        orderDetails: orderData.items.map((item) => ({
+          itemId: item.itemId,
+          itemName: item.itemName,
+          price: item.price,
+          quantity: item.quantity,
+          subCategoryName: item.subCategoryName,
+        })),
+      };
+      const response = await fetch(`${API_CONFIG.BASE_URL}api/Order`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiRequestData),
+      });
+      var result = await response.json();
+      if (result.color === 'success') {
+        clearOrderData();
+        setIsModalOpen(false);
+        toast({
+          title: result.management,
+          description: result.msg,
+        });
+      } else {
+        console.error(result.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
 
     handlePrint();
     //setCheckOutOpen(false);
   };
-
+  const handlePrintBillClick = async () => {
+    handlePrint();
+  };
+  const handleDiscountClick = async () => {
+    setIsCouponPopupOpen(true);
+  };
   const handleCloseClick = () => {
-    setOrderData({
-      tableNumber: 'A1',
-      status: 'New',
-      paymentType: '',
-      items: [],
-      discount : 0,
-    });
+    clearOrderData();
     setIsModalOpen(false);
-    setCheckOutOpen(false);
+    setMiddleComponent('');
   };
   const handleQuantityChange = (index: number, newQuantity: number) => {
     setOrderData((prevOrderData) => {
@@ -340,16 +284,126 @@ const Order = () => {
       return { ...prevOrderData, items: updatedItems };
     });
   };
+  const clearOrderData = () => {
+    setOrderData({
+      tableNumber: '',
+      status: 'New',
+      paymentType: '',
+      items: [],
+      discount: 0,
+      note: '',
+    });
+  };
+  const tableData = [
+    {
+      id: 1,
+      name: 'A1',
+      color: 'bg-cyan',
+      tableState : 'pending',
+    },
+    {
+      id: 2,
+      name: 'A2',
+      color: 'bg-primary',
+      tableState : 'due',
+    },
+    {
+      id: 3,
+      name: 'A3',
+      color: 'bg-destructive',
+      tableState : 'pending',
+
+    },
+    {
+      id: 4,
+      name: 'A4',
+      color: 'bg-yellow',
+      tableState : 'delivered',
+
+    },
+    {
+      id: 5,
+      name: 'A5',
+      color: 'bg-gray',
+      tableState : 'due',
+    },
+    {
+      id: 6,
+      name: 'A6',
+      color: 'bg-cyan',
+      tableState : 'locked',
+    },
+    {
+      id: 7,
+      name: 'A7',
+      color: 'bg-primary',
+      tableState : 'locked',
+    },
+    {
+      id: 8,
+      name: 'A8',
+      color: 'bg-destructive',
+      tableState : 'pending',
+    },
+    {
+      id: 9,
+      name: 'A9',
+      color: 'bg-yellow',
+      tableState : 'due',
+    },
+    {
+      id: 10,
+      name: 'A10',
+      color: 'bg-gray',
+      tableState : 'locked',
+    },
+    {
+      id: 11,
+      name: 'A11',
+      color: 'bg-cyan',
+      tableState : 'pending',
+    },
+    {
+      id: 12,
+      name: 'A12',
+      color: 'bg-primary',
+      tableState : 'delivered',
+    },
+    {
+      id: 13,
+      name: 'A13',
+      color: 'bg-destructive',
+      tableState : 'due',
+    },
+    {
+      id: 14,
+      name: 'A14',
+      color: 'bg-yellow',
+      tableState : 'delivered',
+    },
+    {
+      id: 15,
+      name: 'A15',
+      color: 'bg-gray',
+      tableState : 'due',
+    },
+  ];
+  const handleTableClick = (tableName: string) => {
+    setOrderData({
+      ...orderData,
+      tableNumber: tableName,
+    });
+  };
   return (
     <>
-      <div className=' bg-white'>
-        <nav className='border-gray-200 bg-[#f5f6f9] p-4'>
+      <div className='max-h-screen w-full min-w-[500px] bg-white'>
+        <nav className='w-full min-w-[500px] border-gray-200 bg-[#f5f6f9] p-2'>
           <div className='mx-auto flex max-w-screen-xl items-center justify-between'>
             <Button
               onClick={() => router.push('/')}
-              className='bg-cyan px-5 py-1 text-sm font-medium text-white'
+              className='bg-cyan text-sm font-medium text-white'
             >
-              Main Menu
+              {t.mainMenu}
             </Button>
             <div className='flex flex-row items-center'>
               <ul className='flex space-x-4'>
@@ -370,411 +424,203 @@ const Order = () => {
             </div>
           </div>
         </nav>
+        {orderData.tableNumber == '' ?(
+          <Pos
+          tableData={tableData}
+          handleTableClick={handleTableClick}
+           />
+        ):(
         <div>
-          <Tabs
-            selectedIndex={tabIndex}
-            onSelect={(index) => setTabIndex(index)}
-          >
-            <TabList>
-              <Tab>Categories</Tab>
-              {selectedCategory && <Tab>Subcategories</Tab>}
-            </TabList>
+          <div>
+            <Tabs
+              selectedIndex={tabIndex}
+              onSelect={(index) => setTabIndex(index)}
+            >
+              <TabList>
+                <Tab>{t.categories}</Tab>
+                {selectedCategory && <Tab>{t.subCategories}</Tab>}
+              </TabList>
 
-            <TabPanel>
-              <div className='bg-[#efefef] px-1'>
-                <div className='scrollbar-hide flex max-h-[100px] flex-row gap-4 overflow-x-auto'>
-                  {categoryData.map((item) => (
-                    <div
-                      key={item.id}
-                      className=' my-2 flex w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
-                      onClick={() => handleCategoryClick(item.id)}
-                    >
-                      <img
-                        src={item.pic}
-                        alt={item.name}
-                        className='mt-2 h-10 w-10 object-cover'
-                      />
-                      <div className='p-1'>
-                        <h3 className='text-center font-bold text-white'>
-                          {item.name}
-                        </h3>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </TabPanel>
-
-            {selectedCategory && (
               <TabPanel>
-                <div className='bg-[rgb(239,239,239)] px-1'>
-                  <div className='scrollbar-hide flex max-h-[100px] flex-row gap-4 overflow-x-auto'>
-                    {subCategoryData.map((item) => (
+                <div className='bg-[#efefef] px-1'>
+                  <div className='scrollbar-hide flex max-h-[100px] flex-row gap-x-4 overflow-x-auto'>
+                    {categoryData.map((item) => (
                       <div
                         key={item.id}
-                        className=' my-2 flex w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
-                        onClick={() => handleSubCategoryClick(item.id)}
+                        className='my-1 flex w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
+                        onClick={() => handleCategoryClick(item.id)}
                       >
                         <img
                           src={item.pic}
                           alt={item.name}
-                          className='mt-2 h-10 w-10 object-cover'
+                          className='mt-1 h-8 w-8 object-cover'
                         />
                         <div className='p-1'>
-                          <h3 className='text-center font-bold text-white'>
-                            {item.name}
-                          </h3>
+                          <h4 className='text-center font-bold text-white'>
+                            {locale === 'en' ? item.name : item.localizedName}
+                          </h4>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </TabPanel>
-            )}
-          </Tabs>
-        </div>
-        {/* <div className='bg-[#efefef] px-1'>
-          <div className='scrollbar-hide flex max-h-[100px] flex-row gap-4 overflow-x-auto'>
-            {categoryData.map((item) => (
-              <div
-                key={item.id}
-                className=' my-2 flex w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
-                onClick={() => handleCategoryClick(item.id)}
-              >
-                <img
-                  src={item.pic}
-                  alt={item.name}
-                  className='mt-2 h-10 w-10 object-cover'
-                />
-                <div className='p-1'>
-                  <h3 className='text-center font-bold text-white'>
-                    {item.name}
-                  </h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div> */}
-        <div className='flex h-full flex-row items-start justify-start gap-16'>
-          <div className='ml-10 mt-2 flex h-full flex-col'>
-            <Button className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-yellow text-yellow-foreground shadow-md'>
-              Change Table
-            </Button>
-            <Button
-              onClick={() => handleSelectCustomerClick()}
-              className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-primary text-primary-foreground shadow-md'
-            >
-              Select Customer
-            </Button>
-            <Button className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-gray text-gray-foreground shadow-md'>
-              Ticket Note
-            </Button>
-            <Button
-              variant='destructive'
-              className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border shadow-md'
-            >
-              Print bill
-            </Button>
-            <Button onClick={()=> setIsCouponPopupOpen(true)} className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-light text-light-foreground shadow-md'>
-              Add ticket
-            </Button>
-          </div>
-          {checkOutOpen ? (
-            <CheckOutForm
-              orderData={orderData}
-              onUpdateOrderData={handleUpdateOrderData}
-              handleSaveClick={handleSaveClick}
-            />
-          ) : (
-            <div className=' mt-2 h-[430px] w-[500px] rounded-xl bg-[#f9f9f9]'>
-              <div className='container mx-auto mt-1'>
-                <div className='scrollbar-hide flex max-h-[210px] flex-wrap justify-center gap-2 gap-x-6 overflow-x-auto'>
-                  {itemData.map((item) => (
-                    <div
-                      key={item.id}
-                      className='h-16 w-32 overflow-hidden border bg-cyan shadow-md'
-                      onClick={() => handleItemClick(item)}
-                    >
-                      <div>
-                        <h4 className='text-center font-bold'>{item.name}</h4>
-                        <h4 className='text-center font-bold'>{item.price}</h4>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className='container mx-auto mt-1'>
-                <div className='mr-2 flex flex-row gap-12'>
-                  <div className='relative ml-6 flex w-[56.5%] items-center'>
-                    <Input
-                      type='search'
-                      id='search-dropdown'
-                      className='z-20 ml-2 block h-8 w-full rounded-bl-lg rounded-tl-lg p-2.5 sm:text-xs'
-                      placeholder=''
-                      required
-                    />
-                    <button
-                      type='submit'
-                      className=' h-8 rounded-e-lg bg-[#bebebe] px-3 text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800'
-                    >
-                      <svg
-                        className='h-4 w-4'
-                        aria-hidden='true'
-                        xmlns='http://www.w3.org/2000/svg'
-                        fill='none'
-                        viewBox='0 0 20 20'
-                      >
-                        <path
-                          stroke='currentColor'
-                          stroke-linecap='round'
-                          stroke-linejoin='round'
-                          stroke-width='2'
-                          d='m6 18L18 6M6 6l12 12'
-                        />
-                      </svg>
-                    </button>
-                  </div>
 
-                  <button
-                    type='button'
-                    className=' bg-color-Cyan h-8 w-28 rounded-lg border border-gray-200 px-5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    Enter
-                  </button>
-                </div>
-              </div>
-              <div className='mx-auto mt-1'>
-                <div className='mx-2 flex max-w-[500px] flex-wrap justify-center gap-x-10'>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    1
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    2
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    3
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    4
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    5
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    6
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    7
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    8
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    9
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    .
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    0
-                  </button>
-                  <button
-                    type='button'
-                    className=' bg-color-Light mb-2 me-2 h-8 w-28 rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none  '
-                  >
-                    X
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          <div className='mt-2 h-[430px] w-[500px]'>
-            <div className='container relative mx-auto'>
-              <div className='flex h-[385px] w-full flex-col justify-between rounded-xl bg-light'>
-                <div className='relative overflow-x-auto sm:rounded-lg'>
-                  <table className='w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400'>
-                    <thead className='bg-gray text-xs text-gray-900'>
-                      <tr>
-                        <th scope='col' className='py-3 pl-2'>
-                          <div>Table: A1</div>
-                          {orderData.customer?.name && (
-                            <div>
-                              {'Customer : ' + orderData.customer?.name}
-                            </div>
-                          )}
-                        </th>
-                        <th scope='col' className='absolute right-0 px-6 py-3'>
-                          Status: New
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className='text-gray-900'>
-                      {orderData.items.map((item, index) => (
-                        <tr key={index}>
-                          <th className='py-1 pl-6 font-medium'>
-                            <div className='flex items-center'>
-                              <button
-                                onClick={() =>
-                                  handleQuantityChange(index, item.quantity - 1)
-                                }
-                                className='bg-gray-200 px-2 py-1 text-gray-700'
-                              >
-                                -
-                              </button>
-                              {item.quantity}
-                              <button
-                                onClick={() =>
-                                  handleQuantityChange(index, item.quantity + 1)
-                                }
-                                className='bg-gray-200 px-2 py-1 text-gray-700'
-                              >
-                                +
-                              </button>
-                            </div>
-                          </th>
-                          <th className=' left-0 pr-20 font-medium'>
-                            {item.subCategoryName} ({item.itemName})
-                          </th>
-                          <td className='absolute right-0 mr-5 px-2 py-1'>
-                            {item.price}
-                            <button
-                              onClick={() => handleRemoveItemClick(index)}
-                              className='ml-2 bg-red-500 px-2 py-1 text-white'
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className=' rounded-lg bg-gray text-xs text-white'>
-                  <div className='flex flex-row font-semibold'>
-                    <div className='px-6 py-1 text-base'>Total</div>
-                    <div className='absolute right-0 mr-5 px-6 py-2'>
-                      {orderData.items
-                        .reduce(
-                          (total, item) => total + item.price * item.quantity,
-                          0
-                        )
-                        .toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                type='button'
-                onClick={handleSettleClick}
-                className='text-bg-light-foreground mb-2 me-2 mt-1 h-[30px] w-32 rounded-sm bg-light'
-              >
-                Settle
-              </Button>
-              <Button
-                type='button'
-                onClick={handleCloseClick}
-                className='text-bg-light-foreground absolute right-0 mb-2 me-2 mt-1 h-[30px] w-32 rounded-sm bg-destructive px-5 text-sm'
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-        <div>
-          {isModalOpen && (
-            <div
-              id='default-modal'
-              className='fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 transform p-4 md:p-5'
-            >
-              <div className='relative max-h-full w-full max-w-2xl p-4'>
-                {/* Modal content */}
-                <div className='relative bg-background'>
-                  {/* Modal header */}
-                  <div className='flex items-center justify-between rounded-t p-2 md:p-3'>
-                    <button
-                      type='button'
-                      onClick={() => setIsModalOpen(false)}
-                      className='ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-black hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white'
-                      data-modal-hide='default-modal'
-                    >
-                      <svg
-                        className='h-3 w-3'
-                        aria-hidden='true'
-                        xmlns='http://www.w3.org/2000/svg'
-                        fill='none'
-                        viewBox='0 0 14 14'
-                      >
-                        <path
-                          stroke='currentColor'
-                          stroke-linecap='round'
-                          stroke-linejoin='round'
-                          stroke-width='2'
-                          d='m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6'
-                        />
-                      </svg>
-                      <span className='sr-only'>Close modal</span>
-                    </button>
-                  </div>
-                  {/* Modal body */}
-                  <div className='space-y-4 p-4 md:p-5'>
-                    <div className='scrollbar-hide flex max-h-[100px] flex-row justify-center gap-4 overflow-x-auto'>
-                      {itemData.map((item) => (
+              {selectedCategory && (
+                <TabPanel>
+                  <div className='bg-[rgb(239,239,239)] px-1'>
+                    <div className='scrollbar-hide flex max-h-[100px] flex-row gap-x-4 overflow-x-auto'>
+                      {subCategoryData.map((item) => (
                         <div
                           key={item.id}
-                          className=' my-2 flex h-20 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
-                          onClick={() => handleItemClick(item)}
+                          className='my-1 flex w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
+                          onClick={() => handleSubCategoryClick(item.id)}
                         >
-                          <div className='flex flex-col p-1'>
-                            <h3 className='text-center font-bold text-white'>
-                              {item.name}
-                            </h3>
+                          <img
+                            src={item.pic}
+                            alt={item.name}
+                            className='mt-1 h-8 w-8 object-cover'
+                          />
+                          <div className='p-1'>
                             <h4 className='text-center font-bold text-white'>
-                              {'(' + item.price + ')'}
+                              {locale === 'en' ? item.name : item.localizedName}
                             </h4>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
+                </TabPanel>
+              )}
+            </Tabs>
+          </div>
+          <div className='flex flex-col gap-x-8 lg:flex-row'>
+            <div className='flex flex-row lg:ml-10 lg:mt-2 lg:flex-col'>
+              <Button 
+              onClick={()=> {
+                setOrderData({
+                  ...orderData,
+                  tableNumber: '',
+                });
+              }} 
+              className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-yellow text-yellow-foreground shadow-md md:flex-row'>
+                {t.changeTable}
+              </Button>
+              <Button
+                onClick={() => handleSelectCustomerClick()}
+                className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-primary text-primary-foreground shadow-md'
+              >
+                {t.selectCustomer}
+              </Button>
+              <Button
+                onClick={() => setMiddleComponent('ticketNote')}
+                className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-gray text-gray-foreground shadow-md'
+              >
+                {t.ticketNote}
+              </Button>
+              <Button
+                variant='destructive'
+                className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border shadow-md'
+              >
+                {t.printBill}
+              </Button>
+              <Button
+                onClick={handleSaveClick}
+                className='mb-2 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-light text-light-foreground shadow-md'
+              >
+                {t.addTicket}
+              </Button>
+            </div>
+            {middleComponent == 'checkoutform' ? (
+              <CheckOutForm
+                orderData={orderData}
+                onUpdateOrderData={handleUpdateOrderData}
+                handlePrintBillClick={handlePrintBillClick}
+                handleDiscountClick={handleDiscountClick}
+              />
+            ) : middleComponent == 'ticketNote' ? (
+              <TicketNote
+                orderData={orderData}
+                setOrderData={setOrderData}
+                setMiddleComponent={setMiddleComponent}
+              />
+            ) : (
+              <OrderItemSection
+                itemData={itemData}
+                handleItemClick={handleItemClick}
+              />
+            )}
+            <Cart
+              orderData={orderData}
+              handleQuantityChange={handleQuantityChange}
+              handleRemoveItemClick={handleRemoveItemClick}
+              handleSettleClick={handleSettleClick}
+              handleCloseClick={handleCloseClick}
+            />
+          </div>
+          <div>
+            {isModalOpen && (
+              <div
+                id='default-modal'
+                className='fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 transform p-4 md:p-5'
+              >
+                <div className='relative max-h-full w-full max-w-2xl p-4'>
+                  {/* Modal content */}
+                  <div className='relative bg-background'>
+                    {/* Modal header */}
+                    <div className='flex items-center justify-between rounded-t p-2 md:p-3'>
+                      <button
+                        type='button'
+                        onClick={() => setIsModalOpen(false)}
+                        className='ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-black hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white'
+                        data-modal-hide='default-modal'
+                      >
+                        <svg
+                          className='h-3 w-3'
+                          aria-hidden='true'
+                          xmlns='http://www.w3.org/2000/svg'
+                          fill='none'
+                          viewBox='0 0 14 14'
+                        >
+                          <path
+                            stroke='currentColor'
+                            stroke-linecap='round'
+                            stroke-linejoin='round'
+                            stroke-width='2'
+                            d='m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6'
+                          />
+                        </svg>
+                        <span className='sr-only'>Close modal</span>
+                      </button>
+                    </div>
+                    {/* Modal body */}
+                    <div className='space-y-4 p-4 md:p-5'>
+                      <div className='scrollbar-hide flex max-h-[100px] flex-row justify-center gap-4 overflow-x-auto'>
+                        {itemData.map((item) => (
+                          <div
+                            key={item.id}
+                            className=' my-2 flex h-20 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-cyan shadow-md'
+                            onClick={() => handleItemClick(item)}
+                          >
+                            <div className='flex flex-col p-1'>
+                              <h3 className='text-center font-bold text-white'>
+                                {item.name}
+                              </h3>
+                              <h4 className='text-center font-bold text-white'>
+                                {'(' + item.price + ')'}
+                              </h4>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+        )}
       </div>
       {isCustomerPopupOpen && (
         <CustomerPopup
@@ -788,6 +634,7 @@ const Order = () => {
           customerData={customerData}
           handleApplyCoupon={handleApplyCoupon}
           setIsCouponPopupOpen={setIsCouponPopupOpen}
+          setCouponError={setCouponError}
           couponError={couponError}
         />
       )}
