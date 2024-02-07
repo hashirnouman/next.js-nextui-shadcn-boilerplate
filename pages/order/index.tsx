@@ -11,9 +11,11 @@ import axios from 'axios';
 import {
   Category,
   Customer,
+  Floor,
   Item,
   OrderData,
   SubCategory,
+  Table,
 } from '@/types/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -26,13 +28,16 @@ import { useReactToPrint } from 'react-to-print';
 import Receipt from '@/components/Receipt';
 import CouponPopup from '@/components/CoupanPopup';
 import { getCouponByCode } from '@/services/order';
+import {
+  getFloors,
+  getTables
+} from '@/services/floorTable';
 import TicketNote from '@/components/TicketNote';
 import OrderItemSection from '@/components/OrderItemsSection';
 import Cart from '@/components/Cart';
 import en from '@/locales/en';
 import ar from '@/locales/ar';
 import SelectTable from '@/components/SelectTable';
-import Pos from '@/components/Pos';
 const Order = () => {
   const router = useRouter();
   const { locale } = router;
@@ -70,7 +75,9 @@ const Order = () => {
   const [isCouponPopupOpen, setIsCouponPopupOpen] = useState(false);
   const [customerData, setCustomerData] = useState<Customer[]>([]);
   const [couponError, setCouponError] = useState('');
-
+  const [floorData, setFloorData] = useState<Floor[]>([]);
+  const [selectTableOpen, setSelectTableOpen] = useState(false);
+  const [tableData, setTableData] = useState<Table[]>([]);
   const { toast } = useToast();
   const getCategoryData = () => {
     axios
@@ -118,6 +125,8 @@ const Order = () => {
   };
   useEffect(() => {
     getCategoryData();
+    getFloorData();
+    getTableData('0');
   }, []);
   const handleCategoryClick = (categoryId: number) => {
     getSubCategoryData(categoryId);
@@ -294,7 +303,7 @@ const Order = () => {
       note: '',
     });
   };
-  const tableData = [
+  const tableData2 = [
     {
       id: 1,
       name: 'A1',
@@ -393,6 +402,24 @@ const Order = () => {
       ...orderData,
       tableNumber: tableName,
     });
+    setSelectTableOpen(false);
+  };
+  const getFloorData = async () => {
+    try {
+      const floors = await getFloors();
+      setFloorData(floors);
+    } catch (error) {
+      console.error('Error fetching floor data:', error);
+    }
+  };
+  const getTableData = async (floorId: string) => {
+    try {
+      const tables = await getTables(floorId);
+      setTableData(tables);
+      console.log(tableData);
+    } catch (error) {
+      console.error('Error fetching floor data:', error);
+    }
   };
   return (
     <>
@@ -424,10 +451,12 @@ const Order = () => {
             </div>
           </div>
         </nav>
-        {orderData.tableNumber == '' ?(
-          <Pos
+        {selectTableOpen ?(
+          <SelectTable
           tableData={tableData}
+          floorData={floorData}
           handleTableClick={handleTableClick}
+          getTableData={getTableData}
            />
         ):(
         <div>
@@ -497,12 +526,7 @@ const Order = () => {
           <div className='flex flex-col gap-x-8 lg:flex-row'>
             <div className='flex flex-row lg:ml-10 lg:mt-2 lg:flex-col'>
               <Button 
-              onClick={()=> {
-                setOrderData({
-                  ...orderData,
-                  tableNumber: '',
-                });
-              }} 
+              onClick={()=> setSelectTableOpen(true)}
               className='mb-4 flex h-16 w-32 flex-col items-center justify-center overflow-hidden rounded-lg border bg-yellow text-yellow-foreground shadow-md md:flex-row'>
                 {t.changeTable}
               </Button>

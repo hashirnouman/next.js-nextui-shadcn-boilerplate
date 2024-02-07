@@ -72,3 +72,12 @@ export type Coupon = {
   perCustomerLimit: number;
   minimumOrderAmount: number;
 };
+export type Floor = {
+  id: string;
+  name: string;
+};
+export type Table = {
+  id: string;
+  name: string;
+  floorId: number;
+};
